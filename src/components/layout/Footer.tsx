@@ -35,9 +35,7 @@ const Footer = () => {
             className="space-y-4"
           >
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">E</span>
-              </div>
+              <img src="/logo.png" alt="Ementech Logo" className="w-10 h-10 rounded-lg object-contain" />
               <span className="text-2xl font-bold gradient-text">Ementech</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
