@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, ExternalLink, Check, Briefcase, Home, Wrench, ShoppingCart } from 'lucide-react';
+import TechStack from '../ui/TechStack';
 
 const Products = () => {
   const products = [
@@ -141,15 +142,8 @@ const Products = () => {
               </div>
 
               {/* Tech Stack */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {product.tech.map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-3 py-1 rounded-full text-xs font-medium bg-dark-800 text-gray-300 border border-dark-700"
-                  >
-                    {tech}
-                  </span>
-                ))}
+              <div className="mb-6">
+                <TechStack technologies={product.tech} />
               </div>
 
               {/* Action Link */}
