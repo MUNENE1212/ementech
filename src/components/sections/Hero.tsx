@@ -1,5 +1,6 @@
 import { ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import AnimatedLogo from '../ui/AnimatedLogo';
 
 const Hero = () => {
   return (
@@ -53,11 +54,23 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
+          {/* Animated Logo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+            className="mb-8 flex justify-center"
+          >
+            <div className="w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96">
+              <AnimatedLogo size={384} autoPlay={true} loop={false} />
+            </div>
+          </motion.div>
+
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 3.5 }}
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-dark-800/50 border border-dark-700 backdrop-blur-sm mb-8"
           >
             <Sparkles className="w-4 h-4 text-accent-400" />
@@ -68,7 +81,7 @@ const Hero = () => {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 3.7 }}
             className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 leading-tight"
           >
             <span className="text-white">Transform Your Business With </span>
@@ -80,7 +93,7 @@ const Hero = () => {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 3.9 }}
             className="text-lg sm:text-xl text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed"
           >
             Proven track record with 4+ production-ready platforms. From AI-powered marketplaces to
@@ -91,7 +104,7 @@ const Hero = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 4.1 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <a
@@ -113,7 +126,7 @@ const Hero = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 4.3 }}
             className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8"
           >
             {[
@@ -126,7 +139,7 @@ const Hero = () => {
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 * index + 0.7 }}
+                transition={{ delay: 0.1 * index + 4.4 }}
                 className="glass-card p-6 rounded-xl"
               >
                 <div className="text-3xl font-bold gradient-text mb-2">{stat.value}</div>

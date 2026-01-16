@@ -1,5 +1,6 @@
 import { Github, Linkedin, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Logo from '../ui/Logo';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -34,11 +35,9 @@ const Footer = () => {
             viewport={{ once: true }}
             className="space-y-4"
           >
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">E</span>
-              </div>
-              <span className="text-2xl font-bold gradient-text">Ementech</span>
+            <div className="flex items-center">
+              <Logo size={45} animated={false} showText={false} />
+              <span className="text-2xl font-bold gradient-text ml-3">Ementech</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
               Transforming businesses through innovative software solutions and cutting-edge AI technology.
