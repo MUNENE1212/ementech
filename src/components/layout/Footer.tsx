@@ -36,7 +36,7 @@ const Footer = () => {
           >
             <div className="flex items-center">
               <img
-                src="/ementech-name-logo-transparent.png"
+                src="/ementech-name-logo-light.png"
                 alt="Ementech"
                 className="h-14 w-auto object-contain"
               />
