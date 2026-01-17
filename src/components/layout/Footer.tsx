@@ -34,7 +34,12 @@ const Footer = () => {
             viewport={{ once: true }}
             className="space-y-4"
           >
-            <div className="flex items-center">
+            <div className="flex items-center space-x-3">
+              <img
+                src="/ementech-mono-logo-light.png"
+                alt="Ementech"
+                className="h-12 w-auto object-contain"
+              />
               <img
                 src="/ementech-name-logo-light.png"
                 alt="Ementech"

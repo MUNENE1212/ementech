@@ -39,7 +39,12 @@ const Header = () => {
             transition={{ delay: 0.2 }}
             className="flex-shrink-0"
           >
-            <a href="#home" className="flex items-center">
+            <a href="#home" className="flex items-center space-x-3">
+              <img
+                src="/ementech-mono-logo-light.png"
+                alt="Ementech"
+                className="h-10 w-auto object-contain"
+              />
               <img
                 src="/ementech-name-logo-light.png"
                 alt="Ementech"
