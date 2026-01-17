@@ -39,9 +39,12 @@ const Header = () => {
             transition={{ delay: 0.2 }}
             className="flex-shrink-0"
           >
-            <a href="#home" className="flex items-center space-x-2">
-              <img src="/logo.png" alt="Ementech Logo" className="w-10 h-10 rounded-lg object-contain" />
-              <span className="text-2xl font-bold gradient-text">Ementech</span>
+            <a href="#home" className="flex items-center">
+              <img
+                src="/ementech-name-logo.png"
+                alt="Ementech"
+                className="h-12 w-auto object-contain"
+              />
             </a>
           </motion.div>
 
