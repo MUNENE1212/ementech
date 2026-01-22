@@ -1,0 +1,150 @@
+{
+  "workflow_id": "phase3-marketing",
+  "name": "Phase 3: Email Marketing & Campaigns",
+  "description": "Implement email templates, campaign management, and Bull queue for bulk sending",
+  "phase": 3,
+
+  "dependencies": ["phase2-leads"],
+  "outputs": [
+    "backend/src/models/EmailTemplate.js",
+    "backend/src/controllers/marketingController.js",
+    "backend/src/routes/marketing.routes.js",
+    "backend/src/routes/template.routes.js",
+    "backend/src/queues/emailQueue.js"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Create EmailTemplate Model",
+      "description": "Define email template schema with variables and trigger configuration",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create model with name, slug, category, type fields",
+        "Add subject, preheader, htmlBody, plainTextBody fields",
+        "Add variables array with name, defaultValue, required",
+        "Add triggerType and triggerConfig for automation",
+        "Add design configuration (layout, colors)",
+        "Add status and metrics tracking"
+      ],
+      "files_to_create": ["backend/src/models/EmailTemplate.js"],
+      "verification": "EmailTemplate model created with all fields",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Setup Bull Queue Infrastructure",
+      "description": "Configure Bull queue for bulk email processing",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create emailQueue.js with Redis connection",
+        "Define 'campaign' job processor for bulk sends",
+        "Define 'sequence-step' job processor",
+        "Define 'personalized' job processor",
+        "Implement batch processing (50 emails per batch)",
+        "Add job status tracking and error handling"
+      ],
+      "files_to_create": ["backend/src/queues/emailQueue.js"],
+      "files_to_modify": ["backend/src/config/index.js"],
+      "verification": "Bull queue connects to Redis and processes test job",
+      "requires_escalation": {
+        "trigger": "redis_setup",
+        "question": "Redis configuration required - please confirm Redis URL or confirm local Redis setup"
+      },
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Create Marketing Controller",
+      "description": "Implement campaign management functions",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create createCampaign() - New campaign from template",
+        "Create getCampaigns() - List with filters",
+        "Create getCampaign() - Detail with analytics",
+        "Create updateCampaign() - Edit draft",
+        "Create deleteCampaign() - Remove",
+        "Create sendCampaign() - Queue for sending",
+        "Create scheduleCampaign() - Schedule future send",
+        "Create sendTestEmail() - Preview to single address",
+        "Create getCampaignAnalytics() - Performance metrics",
+        "Create duplicateCampaign() - Clone existing"
+      ],
+      "files_to_create": ["backend/src/controllers/marketingController.js"],
+      "verification": "All marketing controller functions implemented",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Create Marketing Routes",
+      "description": "Define campaign management API endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "POST /api/marketing/campaigns - Create",
+        "GET /api/marketing/campaigns - List",
+        "GET /api/marketing/campaigns/:id - Get detail",
+        "PUT /api/marketing/campaigns/:id - Update",
+        "DELETE /api/marketing/campaigns/:id - Delete",
+        "POST /api/marketing/campaigns/:id/send - Send now",
+        "POST /api/marketing/campaigns/:id/schedule - Schedule",
+        "POST /api/marketing/campaigns/:id/test - Test email",
+        "GET /api/marketing/campaigns/:id/analytics - Metrics",
+        "POST /api/marketing/campaigns/:id/duplicate - Clone"
+      ],
+      "files_to_create": ["backend/src/routes/marketing.routes.js"],
+      "files_to_modify": ["backend/src/server.js"],
+      "verification": "All marketing routes accessible",
+      "next_step_if_success": 5,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 5,
+      "name": "Create Template Routes",
+      "description": "Define email template API endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "POST /api/templates - Create",
+        "GET /api/templates - List by category",
+        "GET /api/templates/:id - Get",
+        "PUT /api/templates/:id - Update",
+        "DELETE /api/templates/:id - Delete",
+        "POST /api/templates/:id/preview - Preview with data",
+        "GET /api/templates/personalized - Birthday/holiday templates"
+      ],
+      "files_to_create": ["backend/src/routes/template.routes.js"],
+      "files_to_modify": ["backend/src/server.js"],
+      "verification": "All template routes accessible",
+      "next_step_if_success": 6,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 6,
+      "name": "Phase 3 Verification",
+      "description": "Test all Phase 3 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify template CRUD operations",
+        "Verify campaign creation from template",
+        "Verify test email sends correctly",
+        "Verify bulk send queues properly",
+        "Verify campaign analytics tracking",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 3 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase3"
+  },
+
+  "next_workflow": "phase4-sequences.workflow.json"
+}

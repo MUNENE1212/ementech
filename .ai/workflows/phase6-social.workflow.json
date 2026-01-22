@@ -1,0 +1,120 @@
+{
+  "workflow_id": "phase6-social",
+  "name": "Phase 6: Social Media Integration",
+  "description": "Implement LinkedIn and Twitter/X OAuth integration with posting and analytics",
+  "phase": 6,
+
+  "dependencies": ["phase5-abtesting"],
+  "outputs": [
+    "backend/src/models/SocialConnection.js",
+    "backend/src/services/socialService.js",
+    "backend/src/controllers/socialController.js",
+    "backend/src/routes/social.routes.js"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Create SocialConnection Model",
+      "description": "Define OAuth connection storage schema",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create model with userId reference",
+        "Add platform enum (twitter, linkedin)",
+        "Add encrypted credentials storage",
+        "Add token refresh tracking",
+        "Add connection status and last sync"
+      ],
+      "files_to_create": ["backend/src/models/SocialConnection.js"],
+      "verification": "SocialConnection model created",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create Social Service",
+      "description": "Implement OAuth flows and API integration for both platforms",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Implement LinkedIn OAuth 2.0 flow",
+        "Implement Twitter/X OAuth 2.0 flow",
+        "Create post composition and publishing",
+        "Create analytics retrieval from both platforms",
+        "Implement token refresh management",
+        "Add rate limit handling"
+      ],
+      "files_to_create": ["backend/src/services/socialService.js"],
+      "requires_escalation": {
+        "trigger": "social_api_credentials",
+        "question": "LinkedIn and Twitter/X API credentials required - please provide OAuth client ID and secret for both platforms"
+      },
+      "verification": "Social service implements both platform integrations",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Create Social Controller",
+      "description": "Implement social media management functions",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create OAuth initiation handlers",
+        "Create OAuth callback handlers",
+        "Create disconnect handler",
+        "Create share/post content function",
+        "Create schedule post function",
+        "Create analytics aggregation"
+      ],
+      "files_to_create": ["backend/src/controllers/socialController.js"],
+      "verification": "Social controller functions implemented",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Create Social Routes",
+      "description": "Define social media API endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "GET /api/social/connections - List connected",
+        "POST /api/social/connect/:platform - Start OAuth",
+        "GET /api/social/callback/:platform - OAuth callback",
+        "DELETE /api/social/disconnect/:platform - Disconnect",
+        "POST /api/social/share - Share content",
+        "GET /api/social/analytics - Platform analytics",
+        "POST /api/social/schedule - Schedule post"
+      ],
+      "files_to_create": ["backend/src/routes/social.routes.js"],
+      "files_to_modify": ["backend/src/server.js"],
+      "verification": "All social routes accessible",
+      "next_step_if_success": 5,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 5,
+      "name": "Phase 6 Verification",
+      "description": "Test all Phase 6 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify LinkedIn OAuth flow (with test credentials)",
+        "Verify Twitter OAuth flow (with test credentials)",
+        "Verify post sharing to both platforms",
+        "Verify analytics retrieval",
+        "Verify token refresh",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 6 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase6"
+  },
+
+  "next_workflow": "phase7-analytics.workflow.json"
+}

@@ -1,0 +1,136 @@
+{
+  "workflow_id": "phase4-sequences",
+  "name": "Phase 4: Automated Sequences & Personalization",
+  "description": "Implement email sequences, enrollment tracking, and personalized messaging",
+  "phase": 4,
+
+  "dependencies": ["phase3-marketing"],
+  "outputs": [
+    "backend/src/models/EmailSequence.js",
+    "backend/src/models/SequenceEnrollment.js",
+    "backend/src/services/personalizationService.js",
+    "backend/src/routes/sequence.routes.js"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Create EmailSequence Model",
+      "description": "Define automated sequence schema with steps and triggers",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create model with name, description, status fields",
+        "Add trigger configuration (type, conditions)",
+        "Add steps array with order, type, content fields",
+        "Add step types: email, wait, condition, action",
+        "Add exit conditions configuration",
+        "Add metrics: enrolledCount, completedCount"
+      ],
+      "files_to_create": ["backend/src/models/EmailSequence.js"],
+      "verification": "EmailSequence model created with all fields",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create SequenceEnrollment Model",
+      "description": "Track individual lead enrollment in sequences",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create model with leadId, sequenceId references",
+        "Add status enum (active, completed, exited, paused)",
+        "Add currentStep and stepHistory tracking",
+        "Add nextStepScheduledAt for queue scheduling",
+        "Add exitReason for analytics"
+      ],
+      "files_to_create": ["backend/src/models/SequenceEnrollment.js"],
+      "verification": "SequenceEnrollment model created",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Create Personalization Service",
+      "description": "Service for birthday, holiday, and automated personalized messages",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create daily cron job for date-based triggers",
+        "Implement birthday message queuing",
+        "Implement anniversary message queuing",
+        "Implement holiday message system",
+        "Integrate with Bull queue for sending"
+      ],
+      "files_to_create": ["backend/src/services/personalizationService.js"],
+      "verification": "Personalization service can query and queue messages",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Create Sequence Controller",
+      "description": "Implement sequence management functions",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create sequence CRUD operations",
+        "Create activate/pause sequence functions",
+        "Create manual enrollment function",
+        "Create exit enrollment function",
+        "Create sequence step executor",
+        "Integrate with Bull queue for step execution"
+      ],
+      "files_to_create": ["backend/src/controllers/sequenceController.js"],
+      "verification": "Sequence controller functions implemented",
+      "next_step_if_success": 5,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 5,
+      "name": "Create Sequence Routes",
+      "description": "Define sequence API endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "POST /api/sequences - Create",
+        "GET /api/sequences - List",
+        "GET /api/sequences/:id - Get with steps",
+        "PUT /api/sequences/:id - Update",
+        "DELETE /api/sequences/:id - Delete",
+        "POST /api/sequences/:id/activate - Start",
+        "POST /api/sequences/:id/pause - Pause",
+        "POST /api/sequences/:id/enroll - Manual enroll",
+        "GET /api/sequences/:id/enrollments - Enrolled leads",
+        "POST /api/sequences/:id/enrollments/:eid/exit - Exit lead"
+      ],
+      "files_to_create": ["backend/src/routes/sequence.routes.js"],
+      "files_to_modify": ["backend/src/server.js"],
+      "verification": "All sequence routes accessible",
+      "next_step_if_success": 6,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 6,
+      "name": "Phase 4 Verification",
+      "description": "Test all Phase 4 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify sequence creation and step configuration",
+        "Verify manual enrollment works",
+        "Verify automatic enrollment on trigger",
+        "Verify sequence step execution",
+        "Verify birthday message queuing",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 4 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase4"
+  },
+
+  "next_workflow": "phase5-abtesting.workflow.json"
+}

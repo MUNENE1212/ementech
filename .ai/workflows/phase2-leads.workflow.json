@@ -1,0 +1,97 @@
+{
+  "workflow_id": "phase2-leads",
+  "name": "Phase 2: Lead System Completion",
+  "description": "Complete lead management with pipeline, assignment, and Kanban views",
+  "phase": 2,
+
+  "dependencies": ["phase1-employee"],
+  "outputs": [
+    "backend/src/models/Lead.js (extended)",
+    "backend/src/controllers/leadAssignmentController.js",
+    "backend/src/routes/lead.routes.js (extended)"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Enhance Lead Model",
+      "description": "Add assignment, pipeline, and personalization fields to Lead model",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Add assignedTo, assignedAt, assignedBy fields",
+        "Add pipelineStage enum (new, contacted, meeting_scheduled, proposal_sent, negotiation, won, lost)",
+        "Add pipelineStageHistory array for tracking",
+        "Add estimatedValue, probability, tags fields",
+        "Add dateOfBirth, companyAnniversary for personalization",
+        "Add activeSequences array"
+      ],
+      "files_to_modify": ["backend/src/models/Lead.js"],
+      "verification": "Lead model includes all new fields with proper types",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create Lead Assignment Controller",
+      "description": "Implement lead assignment and pipeline management",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create assignLead() - Single assignment with notification",
+        "Create bulkAssignLeads() - Multiple leads to employee",
+        "Create autoAssign() - Round-robin or workload-based",
+        "Create updatePipelineStage() - Move through pipeline with history",
+        "Create getLeadsByEmployee() - Employee's assigned leads",
+        "Create getPipelineView() - Kanban data structure"
+      ],
+      "files_to_create": ["backend/src/controllers/leadAssignmentController.js"],
+      "verification": "All controller functions implemented",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Extend Lead Routes",
+      "description": "Add assignment and pipeline endpoints to existing lead routes",
+      "agent": "implementation_agent",
+      "tasks": [
+        "PUT /api/leads/:id/assign - Assign to employee",
+        "PUT /api/leads/:id/pipeline-stage - Update stage",
+        "GET /api/leads/pipeline - Kanban view data",
+        "POST /api/leads/:id/tags - Add tags",
+        "DELETE /api/leads/:id/tags/:tag - Remove tag",
+        "GET /api/leads/by-employee/:id - Employee's leads",
+        "POST /api/leads/bulk-assign - Bulk assignment"
+      ],
+      "files_to_modify": ["backend/src/routes/lead.routes.js"],
+      "verification": "All new routes accessible and functional",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Phase 2 Verification",
+      "description": "Test all Phase 2 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify lead assignment sends notification",
+        "Verify pipeline stage transitions track history",
+        "Verify Kanban view returns correct structure",
+        "Verify filtering by employee/status/score",
+        "Verify bulk assignment",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 2 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase2"
+  },
+
+  "next_workflow": "phase3-marketing.workflow.json"
+}

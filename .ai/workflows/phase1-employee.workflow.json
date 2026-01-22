@@ -1,0 +1,121 @@
+{
+  "workflow_id": "phase1-employee",
+  "name": "Phase 1: Employee Management & Foundation",
+  "description": "Implement employee management system with invitation flow, permissions, and auto-email creation",
+  "phase": 1,
+
+  "dependencies": [],
+  "outputs": [
+    "backend/src/models/User.js (extended)",
+    "backend/src/controllers/employeeController.js",
+    "backend/src/routes/employee.routes.js",
+    "backend/src/services/emailAccountService.js"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Extend User Model",
+      "description": "Add employee fields, permissions, invitation system to User model",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Add employeeId, hireDate, jobTitle, reportsTo fields",
+        "Add companyEmail object (address, isConfigured, password, configuredAt)",
+        "Add invitation fields (invitedBy, token, expiry, accepted)",
+        "Add assignedLeads array and maxLeadCapacity",
+        "Add permissions array with resource/actions structure"
+      ],
+      "files_to_modify": ["backend/src/models/User.js"],
+      "verification": "User model includes all new fields with proper types and defaults",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create Employee Controller",
+      "description": "Implement all employee management functions",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create inviteEmployee() - Generate token, send invitation email",
+        "Create acceptInvitation() - Validate token, create account",
+        "Create getEmployees() - List with filters and pagination",
+        "Create getEmployee() - Single employee with performance metrics",
+        "Create updateEmployee() - Edit profile and settings",
+        "Create deactivateEmployee() - Soft delete",
+        "Create updatePermissions() - Granular permission management"
+      ],
+      "files_to_create": ["backend/src/controllers/employeeController.js"],
+      "verification": "All controller functions implemented with proper error handling",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Create Email Account Service",
+      "description": "Service to auto-create company email accounts on mail.ementech.co.ke",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create service file with mail server integration",
+        "Implement createMailbox() function",
+        "Implement generateSecurePassword() function",
+        "Implement sendWelcomeEmail() with credentials",
+        "Add error handling for mail server failures"
+      ],
+      "files_to_create": ["backend/src/services/emailAccountService.js"],
+      "verification": "Email account service can create mailboxes (may need mock for testing)",
+      "next_step_if_success": 4,
+      "requires_escalation": {
+        "trigger": "mail_server_access",
+        "question": "Mail server admin API access required - please provide credentials or confirm integration approach"
+      }
+    },
+    {
+      "step": 4,
+      "name": "Create Employee Routes",
+      "description": "Define all employee API endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "POST /api/employees/invite - Admin only",
+        "POST /api/employees/accept-invitation/:token - Public",
+        "GET /api/employees - Admin/Manager",
+        "GET /api/employees/:id - Admin/Manager",
+        "PUT /api/employees/:id - Admin/Self",
+        "DELETE /api/employees/:id - Admin only",
+        "PUT /api/employees/:id/permissions - Admin only",
+        "POST /api/employees/:id/email/configure - Admin only",
+        "GET /api/employees/:id/performance - Admin/Manager/Self"
+      ],
+      "files_to_create": ["backend/src/routes/employee.routes.js"],
+      "files_to_modify": ["backend/src/server.js"],
+      "verification": "All routes registered and accessible",
+      "next_step_if_success": 5,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 5,
+      "name": "Phase 1 Verification",
+      "description": "Test all Phase 1 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify employee invitation flow",
+        "Verify invitation acceptance creates account",
+        "Verify company email creation (or mock)",
+        "Verify permission system works",
+        "Verify list/detail endpoints",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 1 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase1"
+  },
+
+  "next_workflow": "phase2-leads.workflow.json"
+}

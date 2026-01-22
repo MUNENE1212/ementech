@@ -1,0 +1,99 @@
+{
+  "workflow_id": "phase7-analytics",
+  "name": "Phase 7: Analytics & Dashboards",
+  "description": "Enhance analytics with marketing, social, and employee performance metrics",
+  "phase": 7,
+
+  "dependencies": ["phase6-social"],
+  "outputs": [
+    "backend/src/models/Analytics.js (extended)",
+    "backend/src/controllers/analyticsController.js (extended)",
+    "backend/src/routes/analytics.routes.js (extended)"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Enhance Analytics Model",
+      "description": "Add campaign, social, pipeline, and employee metrics to Analytics model",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Add campaigns array with full metrics",
+        "Add social object with platform breakdowns",
+        "Add pipeline object with stage metrics",
+        "Add employeeMetrics array",
+        "Add ROI calculation fields"
+      ],
+      "files_to_modify": ["backend/src/models/Analytics.js"],
+      "verification": "Analytics model includes all new metrics fields",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create Analytics Aggregation Functions",
+      "description": "Implement data aggregation for dashboard metrics",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create marketing metrics aggregator",
+        "Create campaign comparison aggregator",
+        "Create ROI calculator",
+        "Create pipeline metrics aggregator",
+        "Create employee performance aggregator",
+        "Create social analytics aggregator",
+        "Implement Redis caching for expensive queries"
+      ],
+      "files_to_modify": ["backend/src/controllers/analyticsController.js"],
+      "verification": "Aggregation functions return correct data structures",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Extend Analytics Routes",
+      "description": "Add new analytics endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "GET /api/analytics/marketing - Marketing dashboard",
+        "GET /api/analytics/campaigns/:id - Campaign detail",
+        "GET /api/analytics/roi - ROI analysis",
+        "GET /api/analytics/pipeline - Pipeline metrics",
+        "GET /api/analytics/lead-journey/:id - Individual journey",
+        "GET /api/analytics/employee-performance - Team metrics",
+        "GET /api/analytics/social - Social analytics",
+        "GET /api/analytics/export - CSV/PDF export"
+      ],
+      "files_to_modify": ["backend/src/routes/analytics.routes.js"],
+      "verification": "All new analytics routes accessible",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Phase 7 Verification",
+      "description": "Test all Phase 7 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify marketing dashboard returns correct metrics",
+        "Verify campaign comparison works",
+        "Verify ROI calculations are accurate",
+        "Verify pipeline metrics match lead data",
+        "Verify employee performance tracking",
+        "Verify export functionality",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 7 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase7"
+  },
+
+  "next_workflow": "phase8-admin-ui.workflow.json"
+}

@@ -1,0 +1,29 @@
+{
+  "checkpoints": [
+    {
+      "checkpoint_id": "cp_init_20260122",
+      "created_at": "2026-01-22T14:00:00.000Z",
+      "type": "initialization",
+      "description": "Project initialization - orchestration system setup",
+      "stage": "initialization",
+      "git_tag": "cp_init_20260122",
+      "git_sha": null,
+      "rollback_safe": true
+    }
+  ],
+
+  "latest_checkpoint": "cp_init_20260122",
+  "total_checkpoints": 1,
+
+  "by_phase": {
+    "initialization": ["cp_init_20260122"],
+    "phase1-employee": [],
+    "phase2-leads": [],
+    "phase3-marketing": [],
+    "phase4-sequences": [],
+    "phase5-abtesting": [],
+    "phase6-social": [],
+    "phase7-analytics": [],
+    "phase8-admin-ui": []
+  }
+}

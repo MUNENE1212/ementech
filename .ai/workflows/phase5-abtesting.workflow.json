@@ -1,0 +1,98 @@
+{
+  "workflow_id": "phase5-abtesting",
+  "name": "Phase 5: A/B Testing",
+  "description": "Implement A/B testing for email campaigns with variant tracking and winner selection",
+  "phase": 5,
+
+  "dependencies": ["phase4-sequences"],
+  "outputs": [
+    "backend/src/models/ABTest.js",
+    "backend/src/controllers/abtestController.js",
+    "backend/src/routes/abtest.routes.js"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Create ABTest Model",
+      "description": "Define A/B test schema with variants and tracking",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create model with name, campaignId reference",
+        "Add testType enum (subject, content, sendTime, fromName)",
+        "Add variants array with allocation, content, metrics",
+        "Add testSize, winnerCriteria, testDuration",
+        "Add status tracking and winner selection fields"
+      ],
+      "files_to_create": ["backend/src/models/ABTest.js"],
+      "verification": "ABTest model created with all fields",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create A/B Test Controller",
+      "description": "Implement A/B test management and execution",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create A/B test CRUD operations",
+        "Create startTest() - Begin sending variants",
+        "Create endTest() - Stop and select winner",
+        "Create getResults() - Real-time variant metrics",
+        "Create autoSelectWinner() - Based on criteria",
+        "Integrate with email queue for variant sending"
+      ],
+      "files_to_create": ["backend/src/controllers/abtestController.js"],
+      "verification": "A/B test controller functions implemented",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Create A/B Test Routes",
+      "description": "Define A/B testing API endpoints",
+      "agent": "implementation_agent",
+      "tasks": [
+        "POST /api/abtests - Create",
+        "GET /api/abtests - List",
+        "GET /api/abtests/:id - Get detail",
+        "PUT /api/abtests/:id - Update",
+        "DELETE /api/abtests/:id - Delete",
+        "POST /api/abtests/:id/start - Start test",
+        "POST /api/abtests/:id/end - End & select winner",
+        "GET /api/abtests/:id/results - Real-time results"
+      ],
+      "files_to_create": ["backend/src/routes/abtest.routes.js"],
+      "files_to_modify": ["backend/src/server.js"],
+      "verification": "All A/B test routes accessible",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Phase 5 Verification",
+      "description": "Test all Phase 5 functionality",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify A/B test creation with variants",
+        "Verify variant allocation works correctly",
+        "Verify metrics tracking per variant",
+        "Verify auto-winner selection",
+        "Verify real-time results endpoint",
+        "Run all related tests"
+      ],
+      "verification": "All Phase 5 verification checklist items pass",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase5"
+  },
+
+  "next_workflow": "phase6-social.workflow.json"
+}

@@ -1,0 +1,217 @@
+{
+  "workflow_id": "phase8-admin-ui",
+  "name": "Phase 8: Admin Dashboard Frontend",
+  "description": "Rebuild admin dashboard as React/Vite with all feature components",
+  "phase": 8,
+
+  "dependencies": ["phase7-analytics"],
+  "outputs": [
+    "admin-dashboard/ (complete React/Vite application)"
+  ],
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Initialize React/Vite Project",
+      "description": "Set up new admin dashboard with proper configuration",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Initialize Vite with React and TypeScript",
+        "Configure Tailwind CSS",
+        "Set up project structure (components, pages, services, contexts)",
+        "Configure routing with React Router",
+        "Set up API service with Axios",
+        "Configure authentication context"
+      ],
+      "files_to_create": [
+        "admin-dashboard/package.json",
+        "admin-dashboard/vite.config.ts",
+        "admin-dashboard/tailwind.config.js",
+        "admin-dashboard/src/main.tsx",
+        "admin-dashboard/src/App.tsx"
+      ],
+      "verification": "Admin dashboard runs with npm run dev",
+      "next_step_if_success": 2,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 2,
+      "name": "Create Layout Components",
+      "description": "Build core layout structure",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create AdminLayout with sidebar and header",
+        "Create Sidebar with navigation",
+        "Create Header with user menu",
+        "Create responsive design for mobile"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/components/layout/AdminLayout.tsx",
+        "admin-dashboard/src/components/layout/Sidebar.tsx",
+        "admin-dashboard/src/components/layout/Header.tsx"
+      ],
+      "verification": "Layout renders correctly with navigation",
+      "next_step_if_success": 3,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 3,
+      "name": "Create Marketing Components",
+      "description": "Build campaign and template management UI",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create CampaignList with filters and pagination",
+        "Create CampaignEditor with visual builder",
+        "Create TemplateEditor with preview",
+        "Create SequenceBuilder for automation",
+        "Create ABTestSetup for testing"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/components/marketing/CampaignList.tsx",
+        "admin-dashboard/src/components/marketing/CampaignEditor.tsx",
+        "admin-dashboard/src/components/marketing/TemplateEditor.tsx",
+        "admin-dashboard/src/components/marketing/SequenceBuilder.tsx",
+        "admin-dashboard/src/components/marketing/ABTestSetup.tsx"
+      ],
+      "verification": "Marketing components render and interact with API",
+      "next_step_if_success": 4,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 4,
+      "name": "Create Lead Components",
+      "description": "Build lead management and pipeline UI",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create LeadList with filtering",
+        "Create LeadDetail with timeline",
+        "Create LeadPipeline Kanban board",
+        "Create LeadAssignment dialog"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/components/leads/LeadList.tsx",
+        "admin-dashboard/src/components/leads/LeadDetail.tsx",
+        "admin-dashboard/src/components/leads/LeadPipeline.tsx",
+        "admin-dashboard/src/components/leads/LeadAssignment.tsx"
+      ],
+      "verification": "Lead components render with drag-drop pipeline",
+      "next_step_if_success": 5,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 5,
+      "name": "Create Employee Components",
+      "description": "Build employee management UI",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create EmployeeList with search",
+        "Create EmployeeInvite form",
+        "Create EmployeeProfile view/edit",
+        "Create EmployeePermissions manager"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/components/employees/EmployeeList.tsx",
+        "admin-dashboard/src/components/employees/EmployeeInvite.tsx",
+        "admin-dashboard/src/components/employees/EmployeeProfile.tsx",
+        "admin-dashboard/src/components/employees/EmployeePermissions.tsx"
+      ],
+      "verification": "Employee components functional",
+      "next_step_if_success": 6,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 6,
+      "name": "Create Analytics Components",
+      "description": "Build dashboard and reporting UI",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create Dashboard with real-time metrics",
+        "Create CampaignReports with charts",
+        "Create FunnelVisualization",
+        "Create RealTimeMetrics with Socket.IO"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/components/analytics/Dashboard.tsx",
+        "admin-dashboard/src/components/analytics/CampaignReports.tsx",
+        "admin-dashboard/src/components/analytics/FunnelVisualization.tsx",
+        "admin-dashboard/src/components/analytics/RealTimeMetrics.tsx"
+      ],
+      "verification": "Analytics components display data correctly",
+      "next_step_if_success": 7,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 7,
+      "name": "Create Social Components",
+      "description": "Build social media management UI",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create SocialConnections OAuth UI",
+        "Create SocialComposer for posting",
+        "Create SocialAnalytics dashboard"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/components/social/SocialConnections.tsx",
+        "admin-dashboard/src/components/social/SocialComposer.tsx",
+        "admin-dashboard/src/components/social/SocialAnalytics.tsx"
+      ],
+      "verification": "Social components integrate with OAuth flow",
+      "next_step_if_success": 8,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 8,
+      "name": "Create Page Components",
+      "description": "Assemble pages from components",
+      "agent": "implementation_agent",
+      "tasks": [
+        "Create DashboardPage",
+        "Create MarketingPage",
+        "Create LeadsPage",
+        "Create EmployeesPage",
+        "Create AnalyticsPage",
+        "Create SocialPage",
+        "Configure all routes"
+      ],
+      "files_to_create": [
+        "admin-dashboard/src/pages/DashboardPage.tsx",
+        "admin-dashboard/src/pages/MarketingPage.tsx",
+        "admin-dashboard/src/pages/LeadsPage.tsx",
+        "admin-dashboard/src/pages/EmployeesPage.tsx",
+        "admin-dashboard/src/pages/AnalyticsPage.tsx",
+        "admin-dashboard/src/pages/SocialPage.tsx"
+      ],
+      "verification": "All pages render and route correctly",
+      "next_step_if_success": 9,
+      "escalation_on_failure": true
+    },
+    {
+      "step": 9,
+      "name": "Phase 8 Verification",
+      "description": "Test complete admin dashboard",
+      "agent": "qa_agent",
+      "tasks": [
+        "Verify all pages load correctly",
+        "Verify API integration works",
+        "Verify authentication flow",
+        "Verify responsive design",
+        "Verify Kanban drag-drop",
+        "Verify real-time updates",
+        "Run all frontend tests"
+      ],
+      "verification": "Admin dashboard fully functional",
+      "next_step_if_success": "checkpoint",
+      "escalation_on_failure": true
+    }
+  ],
+
+  "checkpoint_config": {
+    "type": "stage_gate",
+    "requires_human_approval": true,
+    "creates_tag": true,
+    "tag_prefix": "phase8"
+  },
+
+  "next_workflow": null,
+  "final_phase": true
+}
