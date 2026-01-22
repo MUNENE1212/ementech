@@ -43,9 +43,9 @@
 
   "checkpoint": {
     "current": "cp_init_20260122",
-    "git_sha": null,
+    "git_sha": "9683eed9f518415226712f06f474ab7c5ee3eac5",
     "created": "2026-01-22T14:00:00.000Z",
-    "verified": false
+    "verified": true
   },
 
   "decisions": {
