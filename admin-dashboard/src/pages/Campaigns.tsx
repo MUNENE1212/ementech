@@ -12,7 +12,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { StatusBadge } from '../components/ui/Badge';
 import { ConfirmModal } from '../components/ui/Modal';
-import type { Campaign } from '../types';
+import type { Campaign, CampaignFilters } from '../types';
 
 const CAMPAIGN_TYPES = [
   { value: 'one-time', label: 'One-time' },
@@ -28,7 +28,7 @@ export const Campaigns: React.FC = () => {
   const deleteModal = useModal();
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
 
-  const { filters, updateFilter, resetFilters } = useFilters({
+  const { filters, updateFilter, resetFilters } = useFilters<CampaignFilters>({
     page: 1,
     limit: 20,
   });

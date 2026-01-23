@@ -10,7 +10,7 @@ interface Particle {
 }
 
 export const useParticleSystem = (
-  canvasRef: React.RefObject<HTMLCanvasElement>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null> | null,
   mousePosition: { x: number; y: number } | null = null,
   prefersReducedMotion: boolean = false
 ) => {
@@ -20,7 +20,7 @@ export const useParticleSystem = (
   const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');

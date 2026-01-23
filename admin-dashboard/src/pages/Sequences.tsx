@@ -12,7 +12,7 @@ import { Input } from '../components/ui/Input';
 import { StatusBadge } from '../components/ui/Badge';
 import { Card, CardHeader } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/Modal';
-import type { Sequence } from '../types';
+import type { Sequence, SequenceFilters } from '../types';
 
 const SEQUENCE_TYPES = [
   'drip',
@@ -31,7 +31,7 @@ export const Sequences: React.FC = () => {
   const [deleteSequenceId, setDeleteSequenceId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const { filters, updateFilter } = useFilters({
+  const { filters, updateFilter } = useFilters<SequenceFilters>({
     page: 1,
     limit: 20,
   });

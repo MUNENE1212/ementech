@@ -14,13 +14,14 @@ interface UsePaginationProps {
 export const usePagination = ({
   initialPage = 1,
   initialLimit = 20,
-  totalPages,
+  totalPages: initialTotalPages,
 }: UsePaginationProps = {}) => {
   const [page, setPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
+  const [totalPages, setTotalPages] = useState(initialTotalPages || 1);
 
   const nextPage = useCallback(() => {
-    setPage((p) => (totalPages === undefined ? p + 1 : Math.min(p + 1, totalPages)));
+    setPage((p) => Math.min(p + 1, totalPages));
   }, [totalPages]);
 
   const prevPage = useCallback(() => {
@@ -28,7 +29,7 @@ export const usePagination = ({
   }, []);
 
   const goToPage = useCallback((pageNum: number) => {
-    setPage(Math.max(1, totalPages === undefined ? pageNum : Math.min(pageNum, totalPages)));
+    setPage(Math.max(1, Math.min(pageNum, totalPages)));
   }, [totalPages]);
 
   const changeLimit = useCallback((newLimit: number) => {
@@ -41,15 +42,21 @@ export const usePagination = ({
     setLimit(initialLimit);
   }, [initialPage, initialLimit]);
 
+  const updateTotalPages = useCallback((newTotalPages: number) => {
+    setTotalPages(newTotalPages);
+  }, []);
+
   return {
     page,
     limit,
+    totalPages,
     nextPage,
     prevPage,
     goToPage,
     changeLimit,
     reset,
-    canGoNext: totalPages === undefined ? true : page < totalPages,
+    updateTotalPages,
+    canGoNext: page < totalPages,
     canGoPrev: page > 1,
   };
 };

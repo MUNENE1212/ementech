@@ -1,0 +1,147 @@
+# Ementech Deployment - All File Paths
+# Generated: 2025-01-18
+
+=============================================================================
+DEPLOYMENT DIRECTORY
+=============================================================================
+
+Main Directory:
+/media/munen/muneneENT/ementech/ementech-website/deployment/
+
+=============================================================================
+1. PM2 ECOSYSTEM FILES
+=============================================================================
+
+Website PM2 Config:
+/media/munen/muneneENT/ementech/ementech-website/deployment/ecosystem.ementech.config.js
+
+Backend PM2 Config (also in deployment dir):
+/media/munen/muneneENT/ementech/ementech-website/deployment/ecosystem.config.js
+
+Backend PM2 Config (in project):
+/media/munen/muneneENT/PLP/MERN/Proj/backend/ecosystem.config.js
+
+=============================================================================
+2. NGINX CONFIGURATIONS
+=============================================================================
+
+Corporate Website Config:
+/media/munen/muneneENT/ementech/ementech-website/deployment/ementech-website.conf
+Target: /etc/nginx/sites-available/ementech-website.conf
+
+Dumu Waks Frontend Config:
+/media/munen/muneneENT/ementech/ementech-website/deployment/dumuwaks-frontend.conf
+Target: /etc/nginx/sites-available/dumuwaks-frontend.conf
+
+Dumu Waks Backend Config:
+/media/munen/muneneENT/ementech/ementech-website/deployment/dumuwaks-backend.conf
+Target: /etc/nginx/sites-available/dumuwaks-backend.conf
+
+=============================================================================
+3. DEPLOYMENT SCRIPTS
+=============================================================================
+
+Deploy Ementech Website:
+/media/munen/muneneENT/ementech/ementech-website/deployment/deploy-ementech.sh
+
+Deploy Dumu Waks:
+/media/munen/muneneENT/ementech/ementech-website/deployment/deploy-dumuwaks.sh
+
+Deploy All Applications:
+/media/munen/muneneENT/ementech/ementech-website/deployment/deploy-all.sh
+
+=============================================================================
+4. VPS SETUP SCRIPTS
+=============================================================================
+
+Initial VPS Setup:
+/media/munen/muneneENT/ementech/ementech-website/deployment/setup-vps.sh
+
+Monitoring Setup:
+/media/munen/muneneENT/ementech/ementech-website/deployment/setup-monitoring.sh
+
+=============================================================================
+5. ENVIRONMENT TEMPLATES
+=============================================================================
+
+Website Environment Template:
+/media/munen/muneneENT/ementech/ementech-website/.env.production.template
+
+Backend Environment Template:
+/media/munen/muneneENT/PLP/MERN/Proj/backend/.env.production.template
+
+Frontend Environment Template:
+/media/munen/muneneENT/PLP/MERN/Proj/frontend/.env.production.template
+
+=============================================================================
+6. DOCUMENTATION
+=============================================================================
+
+Quick Start Guide:
+/media/munen/muneneENT/ementech/ementech-website/deployment/00_QUICK_START.md
+
+Main README:
+/media/munen/muneneENT/ementech/ementech-website/deployment/README.md
+
+Deployment Checklist:
+/media/munen/muneneENT/ementech/ementech-website/deployment/VPS_DEPLOYMENT_CHECKLIST.md
+
+Troubleshooting Guide:
+/media/munen/muneneENT/ementech/ementech-website/deployment/DEPLOYMENT_TROUBLESHOOTING.md
+
+Deliverables Summary:
+/media/munen/muneneENT/ementech/ementech-website/deployment/DEPLOYMENT_DELIVERABLES.md
+
+=============================================================================
+PROJECT ROOT DIRECTORIES
+=============================================================================
+
+Ementech Website:
+/media/munen/muneneENT/ementech/ementech-website/
+
+Dumu Waks Backend:
+/media/munen/muneneENT/PLP/MERN/Proj/backend/
+
+Dumu Waks Frontend:
+/media/munen/muneneENT/PLP/MERN/Proj/frontend/
+
+=============================================================================
+VPS TARGET PATHS (for reference)
+=============================================================================
+
+Deployment Directories:
+/var/www/ementech-website/current/
+/var/www/dumuwaks-frontend/current/
+/var/www/dumuwaks-backend/current/
+/var/www/*/releases/
+
+Configuration Files:
+/etc/nginx/sites-available/
+/etc/nginx/ssl/
+
+Log Files:
+/var/log/pm2/
+/var/log/nginx/
+/var/log/apps/
+/var/log/mongodb/mongod.log
+
+Database:
+/var/lib/mongodb/
+
+=============================================================================
+USAGE EXAMPLES
+=============================================================================
+
+# Deploy all applications
+cd /media/munen/muneneENT/ementech/ementech-website/deployment
+./deploy-all.sh
+
+# Setup new VPS
+cd /media/munen/muneneENT/ementech/ementech-website/deployment
+sudo bash setup-vps.sh
+
+# View documentation
+cat /media/munen/muneneENT/ementech/ementech-website/deployment/00_QUICK_START.md
+
+=============================================================================
+

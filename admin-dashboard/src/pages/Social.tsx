@@ -12,7 +12,7 @@ import { Input } from '../components/ui/Input';
 import { StatusBadge } from '../components/ui/Badge';
 import { Card, CardHeader } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/Modal';
-import type { SocialPost } from '../types';
+import type { SocialPost, SocialFilters } from '../types';
 
 const PLATFORMS = ['linkedin', 'twitter'];
 const POST_STATUS = ['draft', 'scheduled', 'publishing', 'published', 'failed'];
@@ -24,7 +24,7 @@ export const Social: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'accounts'>('posts');
 
-  const { filters, updateFilter } = useFilters({
+  const { filters, updateFilter } = useFilters<SocialFilters>({
     page: 1,
     limit: 20,
   });

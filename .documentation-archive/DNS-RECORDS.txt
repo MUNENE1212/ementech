@@ -1,0 +1,171 @@
+================================================================================
+EMENTECH EMAIL SERVER - DNS CONFIGURATION
+================================================================================
+Domain: ementech.co.ke
+Mail Server: mail.ementech.co.ke (IP: 69.164.244.165)
+Generated: January 19, 2026
+
+================================================================================
+REQUIRED DNS RECORDS - Add these to your domain registrar
+================================================================================
+
+1. MX RECORD (Mail Exchange)
+--------------------------------------------------------------------------------
+Type: MX
+Host: @
+Value: mail.ementech.co.ke
+Priority: 10
+TTL: 3600
+
+Description: Tells other mail servers where to deliver email for your domain
+
+
+2. A RECORD (Mail Server Address)
+--------------------------------------------------------------------------------
+Type: A
+Host: mail
+Value: 69.164.244.165
+TTL: 3600
+
+Description: Points mail.ementech.co.ke to your VPS IP address
+
+
+3. TXT RECORD - SPF (Sender Policy Framework)
+--------------------------------------------------------------------------------
+Type: TXT
+Host: @
+Value: "v=spf1 mx a ip4:69.164.244.165 -all"
+TTL: 3600
+
+Description: Specifies which servers are authorized to send email from your domain
+
+
+4. TXT RECORD - DKIM (DomainKeys Identified Mail)
+--------------------------------------------------------------------------------
+Type: TXT
+Host: mail._domainkey
+Value: "v=DKIM1; h=sha256; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAie27WE6cSqSAAalwBs1u7AD/VyGC3Uq9ehLy1gkJFBHKCVGBHE76ehg1Ln49H/D1Q+62g/Cp4O6wAR3EcRa2WtIANT6q83j2FLIvZsNJFABqNVfbcguZXmY56MZVhc9KlMp4MclXiDLYJgw5PaW9v6jpILBenOnQuzQnBJ6y/I5b4q20hikek4IAn3QGHxK5m+YThWy18eWTy/EqJ161E57t+zBwg9hvdYnfq2VD+p+zZZbl688zBwLbvLuaYhweuMMTPYk+CctU/NeFz9cjgfsIGnaEFSdolAQi4d/ByOrRi7KQdg1g+0uzcaBZTmXOYioKFaKLJWxx8e0S2eJ9ywIDAQCD"
+TTL: 3600
+
+Description: Cryptographic signature for email authentication
+
+
+5. TXT RECORD - DMARC (Domain-based Message Authentication)
+--------------------------------------------------------------------------------
+Type: TXT
+Host: _dmarc
+Value: "v=DMARC1; p=quarantine; rua=mailto:dmarc@ementech.co.ke; ruf=mailto:dmarc@ementech.co.ke; fo=1; aspf=s; adkim=s; pct=100"
+TTL: 3600
+
+Description: Tells receiving servers how to handle emails that fail SPF/DKIM checks
+Options:
+  - p=quarantine: Put suspicious emails in spam (start with this, change to p=reject after 2 weeks)
+  - p=none: Monitor only (for initial testing)
+  - p=reject: Reject failed emails (after IP is warmed up)
+
+
+6. TXT RECORD - SPF for mail subdomain
+--------------------------------------------------------------------------------
+Type: TXT
+Host: mail
+Value: "v=spf1 a -all"
+TTL: 3600
+
+Description: SPF record specifically for mail subdomain
+
+
+================================================================================
+OPTIONAL DNS RECORDS - For enhanced features
+================================================================================
+
+7. A RECORD for webmail (if using Roundcube)
+--------------------------------------------------------------------------------
+Type: A
+Host: webmail
+Value: 69.164.244.165
+TTL: 3600
+
+Description: Access webmail at webmail.ementech.co.ke
+
+
+8. SRV RECORD - Autodiscover (for Outlook/Thunderbird auto-config)
+--------------------------------------------------------------------------------
+Type: SRV
+Host: _autodiscover._tcp
+Priority: 10
+Weight: 10
+Port: 443
+Target: mail.ementech.co.ke
+TTL: 3600
+
+Description: Helps email clients automatically configure settings
+
+
+================================================================================
+TESTING DNS PROPAGATION
+================================================================================
+
+After adding these records, test them:
+
+1. Check MX record:
+   dig MX ementech.co.ke
+
+2. Check SPF record:
+   dig TXT ementech.co.ke
+
+3. Check DKIM record:
+   dig TXT mail._domainkey.ementech.co.ke
+
+4. Check DMARC record:
+   dig TXT _dmarc.ementech.co.ke
+
+5. Online tools:
+   - https://mxtoolbox.com/
+   - https://www.nslookup.io/
+   - https://appmaildev.com/en/dkim
+
+Wait time: DNS records can take 1-48 hours to propagate worldwide
+
+================================================================================
+SECURITY NOTES
+================================================================================
+
+1. Monitor DMARC reports at dmarc@ementech.co.ke
+2. Start with p=quarantine, change to p=reject after IP warm-up (2-4 weeks)
+3. Keep DKIM key secure and backed up
+4. Review SPF record if you add more sending servers
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Add these DNS records at your domain registrar (Where you bought ementech.co.ke)
+2. Wait 1-24 hours for DNS propagation
+3. Test email sending and receiving
+4. Configure email clients (Outlook, Thunderbird, mobile)
+5. Start IP warm-up process (send 20 emails/day, gradually increase)
+
+================================================================================
+EMAIL CLIENT CONFIGURATION
+================================================================================
+
+IMAP Settings:
+- Server: mail.ementech.co.ke
+- Port: 993 (SSL/TLS)
+- Username: your-email@ementech.co.ke
+- Password: [your password]
+
+SMTP Settings:
+- Server: mail.ementech.co.ke
+- Port: 587 (STARTTLS)
+- Username: your-email@ementech.co.ke
+- Password: [your password]
+- Authentication: Required
+
+POP3 Settings (alternative to IMAP):
+- Server: mail.ementech.co.ke
+- Port: 995 (SSL/TLS)
+- Username: your-email@ementech.co.ke
+- Password: [your password]
+
+================================================================================

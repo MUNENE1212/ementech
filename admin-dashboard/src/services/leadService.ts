@@ -4,14 +4,9 @@
  */
 
 import { apiClient } from './apiClient';
-import type { Lead, ApiResponse, PaginatedResponse, PaginationParams, FilterParams } from '../types';
+import type { Lead, ApiResponse, PaginatedResponse, LeadFilters } from '../types';
 
-export interface LeadFilters extends PaginationParams, FilterParams {
-  assignedTo?: string;
-  source?: string;
-  score?: { min?: number; max?: number };
-  tags?: string[];
-}
+export type { LeadFilters };
 
 export const leadService = {
   /**

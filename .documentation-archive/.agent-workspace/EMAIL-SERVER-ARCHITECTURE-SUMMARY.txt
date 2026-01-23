@@ -1,0 +1,446 @@
+================================================================================
+                    EMENTECH EMAIL SERVER ARCHITECTURE
+                           Design Summary - 2026-01-19
+================================================================================
+
+EXECUTIVE SUMMARY
+-----------------
+Production-ready email server for EmenTech Technologies running on existing
+2GB RAM VPS (69.164.244.165). Supports 5 users initially, scales to 100+.
+
+Resource Usage: 180-500MB RAM (25% of available)
+Cost: $15-25/month (vs $30-60/month for Google Workspace)
+Implementation: 5 business days
+
+================================================================================
+TECHNOLOGY STACK
+================================================================================
+
+Component          Technology        RAM Usage    Purpose
+-----------------  ----------------  -----------  ---------------------------
+MTA                Postfix 3.7+      30-100MB     Mail transfer
+MDA                Dovecot 2.3+      50-200MB     Mail delivery + IMAP/POP3
+Database           SQLite 3          0MB          Virtual user storage
+Webmail            Roundcube 1.6+    30-80MB      Web interface
+Spam Filter        Rspamd 3.x        50MB         Spam/malware filtering
+Cache              Redis 7.x         20-50MB      Rspamd cache
+Web Server         nginx 1.24+       0-20MB       Reverse proxy (existing)
+Firewall           ufw               Minimal      Packet filtering
+Brute-force        fail2ban          Minimal      Ban attackers
+DKIM               OpenDKIM 2.11+    Minimal      Email signing
+
+TOTAL: ~180-500MB RAM (well within 2GB budget!)
+
+================================================================================
+SYSTEM ARCHITECTURE
+================================================================================
+
+                    INTERNET
+                       │
+                       │ DNS: MX, SPF, DKIM, DMARC
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      FIREWALL (ufw + fail2ban)                       │
+│  Ports: 25 (SMTP), 587 (Submission), 993 (IMAPS), 995 (POP3S)      │
+│  Rate limiting: 10 connections/minute for SMTP                      │
+└─────────────────────────────────────────────────────────────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+        ▼              ▼              ▼
+┌──────────────┐ ┌──────────┐ ┌───────────┐
+│   SMTP 25    │ │ IMAPS 993│ │ HTTPS 443 │
+│  Submission  │ │ POP3S 995│ │  Webmail   │
+│    587       │ │          │ │           │
+└──────┬───────┘ └────┬─────┘ └─────┬─────┘
+       │              │             │
+       └──────────────┼─────────────┘
+                      ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         POSTFIX (MTA)                               │
+│  • SMTP server (inbound/outbound)                                  │
+│  • TLS encryption                                                  │
+│  • SASL authentication (via Dovecot)                               │
+│  • Virtual user support (SQLite)                                   │
+│  • Queue management                                                │
+│  • DKIM signing (via OpenDKIM)                                     │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+        ┌──────────────────────┼──────────────────────┐
+        │                      │                      │
+        ▼                      ▼                      ▼
+┌───────────────┐    ┌──────────────┐    ┌──────────────┐
+│  DOVECOT      │    │  OpenDKIM    │    │  Rspamd      │
+│  (MDA/LDA)    │    │  (DKIM sign) │    │  (Spam)      │
+├───────────────┤    └──────────────┘    └──────────────┘
+│  • IMAP/POP3 │                                    │
+│  • SASL auth  │         ┌─────────────────────────┤
+│  • Maildir    │         │  • Spam scanning        │
+│  • Sieve      │         │  • DKIM validation      │
+│  • Quota      │         │  • SPF validation       │
+└───────┬───────┘         │  • DMARC validation     │
+        │                 │  • Greylisting          │
+        │                 └─────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      VIRTUAL USER DATABASE                          │
+│                        (SQLite)                                     │
+│  Tables: users, aliases, domains, senders                          │
+└─────────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    MAILDIR STORAGE                                  │
+│                   /var/vmail/                                       │
+│  • ementech.co.ke/ceo/     (cur, new, tmp)                         │
+│  • ementech.co.ke/info/                                            │
+│  • ementech.co.ke/support/                                         │
+│  • ementech.co.ke/admin/                                           │
+│  • ementech.co.ke/tech/                                            │
+└─────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+EMAIL FLOW DIAGRAMS
+================================================================================
+
+INCOMING EMAIL FLOW
+-------------------
+[Sender] → SMTP port 25 → Firewall → Rspamd (spam check) → Postfix 
+  → SQLite (user lookup) → Dovecot (delivery) → Maildir → User access
+
+OUTGOING EMAIL FLOW
+-------------------
+[User] → Webmail/Email Client → SMTP port 587 (TLS) → Postfix 
+  → Dovecot (SASL auth) → SQLite (verify) → Rspamd (scan) 
+  → OpenDKIM (sign) → Recipient Server
+
+WEBMAIL ACCESS FLOW
+-------------------
+[Browser] → HTTPS port 443 → nginx → PHP-FPM → Roundcube 
+  → IMAPS (Dovecot for read) + SMTP (Postfix for send)
+
+================================================================================
+SECURITY ARCHITECTURE
+================================================================================
+
+LAYER 1: NETWORK SECURITY
+  • ufw firewall (restrictive rules)
+  • fail2ban (brute-force protection)
+  • Rate limiting (SMTP: 10/minute)
+
+LAYER 2: TRANSPORT SECURITY
+  • TLS/SSL encryption (mandatory on 587, 993, 995)
+  • Strong ciphers (TLSv1.2, TLSv1.3)
+  • Let's Encrypt certificates
+
+LAYER 3: AUTHENTICATION SECURITY
+  • SASL mechanisms (CRAM-MD5, DIGEST-MD5)
+  • Strong password policy (12+ chars, complexity)
+  • Virtual users (no shell access)
+
+LAYER 4: EMAIL AUTHENTICATION
+  • SPF (authorizes server IP)
+  • DKIM (cryptographic signature)
+  • DMARC (reject policy + reporting)
+
+LAYER 5: CONTENT SECURITY
+  • Rspamd spam filtering (98% detection)
+  • Malware detection
+  • Attachment blocking
+
+================================================================================
+DATA MODEL
+================================================================================
+
+DATABASE: SQLite (/etc/postfix/virtual_mailboxes.db)
+
+TABLES:
+  • users (email, password, name, domain, quota)
+  • aliases (source → destination)
+  • domains (virtual domains)
+  • senders (DKIM configuration)
+
+INITIAL USERS (5):
+  1. ceo@ementech.co.ke        (CEO)
+  2. info@ementech.co.ke       (Info Desk)
+  3. support@ementech.co.ke    (Support Team)
+  4. admin@ementech.co.ke      (Administrator)
+  5. tech@ementech.co.ke       (Technical Support)
+
+STORAGE: Maildir format
+  /var/vmail/ementech.co.ke/username/{cur,new,tmp}/
+
+================================================================================
+NETWORK CONFIGURATION
+================================================================================
+
+FIREWALL RULES (ufw):
+  • 22/tcp   - SSH (rate limited)
+  • 25/tcp   - SMTP (server-to-server)
+  • 587/tcp  - SMTP submission (TLS)
+  • 465/tcp  - SMTPS (legacy)
+  • 993/tcp  - IMAPS (encrypted IMAP)
+  • 995/tcp  - POP3S (encrypted POP3)
+  • 80/tcp   - HTTP (redirect to HTTPS)
+  • 443/tcp  - HTTPS (webmail)
+
+DNS RECORDS (ementech.co.ke):
+  • A: mail.ementech.co.ke → 69.164.244.165
+  • A: webmail.ementech.co.ke → 69.164.244.165
+  • MX: ementech.co.ke → mail.ementech.co.ke (priority 10)
+  • TXT: "v=spf1 mx a ip4:69.164.244.165 -all"
+  • TXT: _dmarc.ementech.co.ke "v=DMARC1; p=reject; ..."
+  • TXT: ementech1._domainkey.ementech.co.ke "v=DKIM1; k=rsa; p=..."
+
+================================================================================
+SCALABILITY ROADMAP
+================================================================================
+
+STAGE 1: CURRENT (0-6 months, 5-10 users)
+  • Single VPS: 2GB RAM
+  • SQLite database
+  • Rspamd only (no ClamAV)
+
+STAGE 2: GROWTH (6-18 months, 10-25 users)
+  • Upgrade VPS to: 4GB RAM
+  • Add: MySQL database
+  • Add: ClamAV antivirus
+  • Add: Redis cache
+
+STAGE 3: EXPANSION (18-36 months, 25-100 users)
+  • Dedicated mail server: 4-8GB RAM
+  • Add: High availability
+  • Add: Load balancing
+  • Add: Archiving solution
+
+UPGRADE TRIGGERS:
+  • RAM usage >85% → Upgrade VPS
+  • Disk usage >80% → Add storage
+  • User count >25 → Plan dedicated server
+
+================================================================================
+IMPLEMENTATION TIMELINE
+================================================================================
+
+PHASE 1: CORE COMPONENTS (Day 1)
+  • Install Postfix, Dovecot, SQLite
+  • Create virtual mail user
+  • Initialize database
+  • Create initial 5 users
+  • Test basic email flow
+
+PHASE 2: SECURITY (Day 2)
+  • Configure firewall (ufw)
+  • Install fail2ban
+  • Install Rspamd
+  • Configure TLS
+
+PHASE 3: WEBMAIL (Day 3)
+  • Install PHP-FPM
+  • Install Roundcube
+  • Configure nginx
+  • Test webmail
+
+PHASE 4: EMAIL AUTHENTICATION (Day 4)
+  • Configure SPF (DNS)
+  • Generate DKIM keys
+  • Configure DMARC (DNS)
+
+PHASE 5: MONITORING (Day 5)
+  • Install Logwatch
+  • Configure monitoring scripts
+  • Configure backup scripts
+  • Final testing
+
+TOTAL: 5 business days (1 week)
+
+================================================================================
+BACKUP STRATEGY
+================================================================================
+
+WHAT TO BACKUP:
+  • Mail storage: /var/vmail (critical)
+  • Database: /etc/postfix/virtual_mailboxes.db
+  • Configuration: /etc/postfix, /etc/dovecot
+  • SSL certificates: /etc/letsencrypt
+  • DKIM keys: /etc/postfix/dkim
+
+SCHEDULE:
+  • Mail storage: Daily (30-day retention)
+  • Database: Daily (90-day retention)
+  • Configuration: On change (365-day retention)
+
+LOCATION:
+  • Local: /backup/mail (staging)
+  • Remote: Off-site server or cloud storage
+
+================================================================================
+MONITORING & ALERTING
+================================================================================
+
+MONITORING TOOLS:
+  • Logwatch (daily email reports)
+  • Custom monitoring script (every 5 minutes)
+
+ALERT CONDITIONS:
+  • Queue full: >1000 messages
+  • Disk full: >90% /var/vmail
+  • Service down: Postfix/Dovecot stopped
+  • High spam: >50% spam ratio
+  • Brute force: >100 fail2ban bans/day
+
+================================================================================
+KEY ADVANTAGES
+================================================================================
+
+1. RESOURCE EFFICIENT
+   • Uses only 25% of available RAM
+   • No need to upgrade VPS
+
+2. COST EFFECTIVE
+   • Saves $60-540/year vs Google/Microsoft
+   • No per-user fees
+
+3. PROFESSIONAL
+   • Custom domain (@ementech.co.ke)
+   • Professional webmail
+   • Full data control
+
+4. SECURE
+   • Multiple security layers
+   • Industry-standard practices
+   • Regular updates
+
+5. SCALABLE
+   • Path to 100+ users
+   • Clear upgrade triggers
+   • Easy migrations
+
+6. MAINTAINABLE
+   • Well-documented
+   • Automated operations
+   • Standard tools
+
+================================================================================
+COMPARISON WITH ALTERNATIVES
+================================================================================
+
+                      Self-Hosted    Google Workspace   Microsoft 365
+                      (This Design)
+
+Monthly Cost         $15-25          $30-60             $30-62.50
+Annual Cost          $180-300        $360-720           $360-750
+Storage              29GB+           30GB/user          50GB/user
+Custom Domain        Yes             Yes                Yes
+Webmail              Roundcube       Gmail              Outlook
+Calendar             Plugin          Included           Included
+Collaboration        Limited         Included           Included
+Data Control         Full            Limited            Limited
+Privacy              Full            Scanned            Scanned
+Setup Time           5 days          1 hour             1 hour
+Maintenance          Required        Included           Included
+Support              Community       Google Support     Microsoft Support
+
+BEST FOR:
+  Self-Hosted:    Cost-conscious, privacy-focused, technical
+  Cloud:          Non-technical, need collaboration, convenience
+
+================================================================================
+DOCUMENTATION FILES
+================================================================================
+
+All documents located in:
+  /media/munen/muneneENT/ementech/ementech-website/.agent-workspace/
+
+1. email-server-architecture.md (63 pages)
+   • Complete system design
+   • Security architecture
+   • Resource management
+   • Scalability roadmap
+
+2. email-server-data-model.md (20 pages)
+   • Database schema
+   • User management scripts
+   • Maildir structure
+   • Backup/restore procedures
+
+3. email-server-implementation-guide.md (35 pages)
+   • Step-by-step installation
+   • 5-phase implementation plan
+   • Testing procedures
+   • Troubleshooting guide
+
+4. email-server-tech-decisions.md (30 pages)
+   • Technology choices
+   • Trade-off analysis
+   • Justification for each decision
+
+5. email-server-handoff.md (31 pages)
+   • Executive summary
+   • Architecture overview
+   • Implementation checklist
+   • Success criteria
+
+6. EMAIL-SERVER-ARCHITECTURE-SUMMARY.txt (this file)
+   • Quick reference
+   • Visual diagrams
+   • Key information
+
+TOTAL: 179 pages of comprehensive documentation
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. REVIEW (1-2 hours)
+   • Read email-server-architecture.md
+   • Read email-server-tech-decisions.md
+   • Identify questions/concerns
+
+2. PLAN (30 minutes)
+   • Choose start date (Monday recommended)
+   • Reserve 5 business days
+   • Plan DNS changes
+
+3. PREPARE (1 hour)
+   • Verify VPS resources
+   • Backup current configuration
+   • Prepare user passwords
+
+4. EXECUTE (5 days)
+   • Follow email-server-implementation-guide.md
+   • Complete one phase per day
+   • Test thoroughly
+
+5. DEPLOY (ongoing)
+   • Monitor system
+   • Gather feedback
+   • Adjust as needed
+
+================================================================================
+CONCLUSION
+================================================================================
+
+You now have a complete, production-ready email server architecture for
+EmenTech Technologies that:
+
+✓ Fits your 2GB RAM VPS constraint
+✓ Uses proven, industry-standard technologies
+✓ Prioritizes security at every layer
+✓ Scales gracefully from 5 to 100+ users
+✓ Saves $60-540/year compared to cloud services
+✓ Is comprehensively documented (179 pages)
+
+The architecture is ready for implementation. Follow the implementation guide
+step-by-step, and you'll have a professional email system running in 5 days.
+
+Good luck with the implementation!
+
+================================================================================
+Document: EMAIL-SERVER-ARCHITECTURE-SUMMARY.txt
+Version: 1.0
+Date: 2026-01-19
+Status: Complete
+================================================================================

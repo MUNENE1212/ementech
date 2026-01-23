@@ -1,0 +1,271 @@
+╔═══════════════════════════════════════════════════════════════════════════════════════╗
+║                 EMENTECH EMAIL SYSTEM - AUTHENTICATION FLOW DIAGRAM                  ║
+╚═══════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                             USER LOGIN FLOW                                         │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+  BROWSER                          BACKEND SERVER                    DATABASE
+     │                                   │                                │
+     │  1. User enters credentials      │                                │
+     │     (email, password)            │                                │
+     ├──────────────────────────────────>│                                │
+     │  POST /api/auth/login            │                                │
+     │                                   │                                │
+     │                                   │  2. Find user by email        │
+     │                                   │     User.findOne({email})      │
+     │                                   ├───────────────────────────────>│
+     │                                   │                                │
+     │                                   │<──────────────────────────────┤
+     │                                   │  Return user record           │
+     │                                   │                                │
+     │                                   │  3. Verify password            │
+     │                                   │     bcrypt.compare()           │
+     │                                   │                                │
+     │                                   │  4. Check isActive             │
+     │                                   │                                │
+     │                                   │  5. Generate JWT token         │
+     │                                   │     jwt.sign({id}, secret)      │
+     │                                   │                                │
+     │<──────────────────────────────────┤  6. Return token + user       │
+     │  { token, user }                  │                                │
+     │                                   │                                │
+     │  7. Store in localStorage        │                                │
+     │     - token                       │                                │
+     │     - user                       │                                │
+     │                                   │                                │
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         PROTECTED API REQUEST FLOW                                  │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+  BROWSER                          BACKEND SERVER                    DATABASE
+     │                                   │                                │
+     │  1. User action (fetch emails)    │                                │
+     │                                   │                                │
+     │  2. GET /api/email/               │                                │
+     │     Authorization: Bearer <token> │                                │
+     ├──────────────────────────────────>│                                │
+     │                                   │                                │
+     │                                   │  3. protect middleware          │
+     │                                   │     a) Extract token            │
+     │                                   │     b) Verify JWT              │
+     │                                   │        jwt.verify(token)       │
+     │                                   │     c) Get user from DB        │
+     │                                   ├───────────────────────────────>│
+     │                                   │     d) Attach user to req      │
+     │                                   │<──────────────────────────────┤
+     │                                   │                                │
+     │                                   │  4. Email controller           │
+     │                                   │     a) req.user.id available   │
+     │                                   │     b) Get user's email config │
+     │                                   ├───────────────────────────────>│
+     │                                   │                                │
+     │                                   │<──────────────────────────────┤
+     │                                   │     c) Return emails           │
+     │                                   │                                │
+     │<──────────────────────────────────┤  5. Return email data         │
+     │  { success, data }                │                                │
+     │                                   │                                │
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                       EMAIL CREDENTIALS ENCRYPTION FLOW                               │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+  BROWSER                          BACKEND SERVER                    DATABASE
+     │                                   │                                │
+     │  1. User configures email        │                                │
+     │     - IMAP host/port/user/pass    │                                │
+     │     - SMTP host/port/user/pass    │                                │
+     ├──────────────────────────────────>│                                │
+     │                                   │                                │
+     │                                   │  2. Encrypt passwords           │
+     │                                   │     a) Generate key             │
+     │                                   │        scryptSync(secret)      │
+     │                                   │     b) Generate random IV       │
+     │                                   │     c) AES-256-CBC encrypt      │
+     │                                   │        encrypt(password)       │
+     │                                   │     d) Store as IV:encrypted    │
+     │                                   │                                │
+     │                                   │  3. Store encrypted credentials │
+     │                                   ├───────────────────────────────>│
+     │                                   │     UserEmail.create({          │
+     │                                   │       imap: {                  │
+     │                                   │         password: encrypted     │
+     │                                   │       },                       │
+     │                                   │       smtp: {                  │
+     │                                   │         password: encrypted     │
+     │                                   │       }                        │
+     │                                   │     })                          │
+     │                                   │                                │
+     │<──────────────────────────────────┤  4. Configuration saved         │
+     │                                   │                                │
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                       IMAP CONNECTION WITH DECRYPTED CREDENTIALS                    │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+  BACKEND SERVER                   DATABASE                      EMAIL SERVER
+       │                              │                               │
+       │  1. Fetch user's emails       │                               │
+       │     GET /api/email/           │                               │
+       │                              │                               │
+       │  2. Get user's email config   │                               │
+       ├─────────────────────────────>│                               │
+       │     UserEmail.getPrimaryEmail()│                               │
+       │                              │                               │
+       │<─────────────────────────────┤  Return encrypted config       │
+       │                              │                               │
+       │  3. Decrypt IMAP password    │                               │
+       │     a) Extract IV            │                               │
+       │     b) AES-256-CBC decrypt   │                               │
+       │        decrypt(encrypted)    │                               │
+       │                              │                               │
+       │  4. Create IMAP connection    │                               │
+       │     new Imap({               │                               │
+       │       host, port,            │                               │
+       │       user,                  │                               │
+       │       password (decrypted)   │                               │
+       │     })                       │                               │
+       │                              │                               │
+       ├──────────────────────────────────────────────────────────────>│
+       │           IMAP CONNECT with credentials                     │
+       │                                                              │
+       │<─────────────────────────────────────────────────────────────┤
+       │           Email messages                                      │
+       │                                                              │
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                       SOCKET.IO REAL-TIME AUTHENTICATION                             │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+  BROWSER                          BACKEND SERVER                    DATABASE
+     │                                   │                                │
+     │  1. Get JWT from localStorage     │                                │
+     │                                   │                                │
+     │  2. Connect Socket.IO             │                                │
+     │     io(url, {                    │                                │
+     │       auth: { token }            │                                │
+     │     })                           │                                │
+     ├──────────────────────────────────>│                                │
+     │                                   │                                │
+     │                                   │  3. Socket.IO middleware        │
+     │                                   │     a) Extract token from auth  │
+     │                                   │     b) Verify JWT              │
+     │                                   │        jwt.verify(token)       │
+     │                                   │     c) Get user from DB        │
+     │                                   ├───────────────────────────────>│
+     │                                   │                                │
+     │                                   │<──────────────────────────────┤
+     │                                   │     d) Attach user to socket   │
+     │                                   │        socket.user = user      │
+     │                                   │        socket.userId = id     │
+     │                                   │                                │
+     │                                   │  4. Join user rooms            │
+     │                                   │     socket.join(               │
+     │                                   │       'email:{userId}'       │
+     │                                   │     )                         │
+     │                                   │     socket.join(               │
+     │                                   │       'user:{userId}'        │
+     │                                   │     )                         │
+     │                                   │                                │
+     │<──────────────────────────────────┤  5. Connection ready            │
+     │  Socket connected                │                                │
+     │                                   │                                │
+     │  6. Listen for events            │                                │
+     │     - new_email                  │                                │
+     │     - email_updated              │                                │
+     │     - email_deleted              │                                │
+     │                                   │                                │
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                       REAL-TIME EMAIL UPDATE FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+  EMAIL SERVER      BACKEND SERVER            DATABASE           BROWSER
+       │                 │                        │                 │
+       │  1. New email    │                        │                 │
+       ├────────────────>│                        │                 │
+       │   IDLE notify    │                        │                 │
+       │                 │                        │                 │
+       │                 │  2. Fetch via IMAP        │                 │
+       │                 ├────────────────────────>│                 │
+       │                 │                        │                 │
+       │                 │<────────────────────────┤  3. Store email │
+       │                 │   Email saved           │                 │
+       │                 │                        │                 │
+       │                 │  4. Emit to user's room  │                 │
+       │                 │     io.to(`user:${userId}`)│                 │
+       │                 │       .emit('new_email')  │                 │
+       │                 ├────────────────────────────────────────────>│
+       │                 │                        │                 │
+       │                 │                        │  5. Update UI   │
+       │                 │                        │     - Add to list│
+       │                 │                        │     - Show badge│
+       │                 │                        │     - Notify    │
+       │                 │                        │                 │
+
+
+╔═══════════════════════════════════════════════════════════════════════════════════════╗
+║                           SECURITY LAYERS SUMMARY                                      ║
+╠═══════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                          ║
+║  LAYER 1: USER AUTHENTICATION (JWT)                                                    ║
+║  ├─ Password hashing with bcrypt                                                       ║
+║  ├─ JWT token generation (HS256)                                                        ║
+║  ├─ Token expiration: 7 days                                                           ║
+║  ├─ Protected API routes                                                               ║
+║  └─ User isolation (req.user.id)                                                       ║
+║                                                                                          ║
+║  LAYER 2: EMAIL CREDENTIALS (AES-256-CBC)                                             ║
+║  ├─ IMAP password encryption                                                           ║
+║  ├─ SMTP password encryption                                                           ║
+║  ├─ Key derivation: scrypt from JWT_SECRET                                            ║
+║  ├─ Random IV for each encryption                                                     ║
+║  └─ Decryption only when connecting to email servers                                  ║
+║                                                                                          ║
+║  LAYER 3: SOCKET.IO AUTHENTICATION                                                     ║
+║  ├─ JWT verification in handshake                                                      ║
+║  ├─ User attached to socket object                                                    ║
+║  ├─ Personal rooms (email:{userId}, user:{userId})                                   ║
+║  └─ All events authenticated                                                          ║
+║                                                                                          ║
+║  LAYER 4: DATA ISOLATION                                                              ║
+║  ├─ Users can only access their own emails                                            ║
+║  ├─ Email account credentials tied to user ID                                         ║
+║  ├─ Socket rooms isolated by user ID                                                  ║
+║  └─ Multi-tenant architecture                                                         ║
+║                                                                                          ║
+╚═══════════════════════════════════════════════════════════════════════════════════════╝
+
+
+╔═══════════════════════════════════════════════════════════════════════════════════════╗
+║                           FILE STRUCTURE                                                ║
+╠═══════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                          ║
+║  BACKEND:                                                                                 ║
+║  ├─ src/routes/auth.routes.js          - Login/register endpoints              ║
+║  ├─ src/routes/email.routes.js        - Protected email routes                ║
+║  ├─ src/controllers/authController.js  - Auth logic                           ║
+║  ├─ src/controllers/emailController.js - Email logic with decryption          ║
+║  ├─ src/middleware/auth.js             - JWT verification middleware          ║
+║  ├─ src/config/socket.js               - Socket.IO authentication            ║
+║  ├─ src/models/User.js                 - User schema with password hashing   ║
+║  └─ src/models/UserEmail.js            - Encrypted email credentials        ║
+║                                                                                          ║
+║  FRONTEND:                                                                               ║
+║  ├─ src/contexts/AuthContext.jsx     - User auth state management          ║
+║  ├─ src/contexts/EmailContext.jsx     - Email state + Socket.IO client       ║
+║  ├─ src/services/authService.js        - Login/register API calls            ║
+║  └─ src/services/emailService.js       - Email API calls with token          ║
+║                                                                                          ║
+╚═══════════════════════════════════════════════════════════════════════════════════════╝
+
+
+For detailed code examples and explanations, see: AUTHENTICATION_FLOW.md

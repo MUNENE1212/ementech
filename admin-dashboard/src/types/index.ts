@@ -306,6 +306,7 @@ export interface SequenceMetrics {
   openRate: number;
   clickRate: number;
   conversionRate: number;
+  completionRate: number;
 }
 
 // ============= A/B Test Types =============
@@ -536,4 +537,47 @@ export interface FilterParams {
   dateFrom?: string;
   dateTo?: string;
   [key: string]: any;
+}
+
+// ============= Filter Types =============
+export interface LeadFilters extends PaginationParams, FilterParams {
+  assignedTo?: string;
+  source?: string;
+  score?: { min?: number; max?: number };
+  tags?: string[];
+}
+
+export interface CampaignFilters extends PaginationParams {
+  search?: string;
+  status?: string;
+  type?: string;
+  category?: string;
+}
+
+export interface SequenceFilters extends PaginationParams {
+  search?: string;
+  status?: string;
+  type?: string;
+  triggerType?: string;
+}
+
+export interface TemplateFilters extends PaginationParams {
+  search?: string;
+  status?: string;
+  category?: string;
+  type?: string;
+}
+
+export interface SocialFilters extends PaginationParams {
+  search?: string;
+  platform?: string;
+  status?: string;
+  accountId?: string;
+}
+
+export interface EmployeeFilters extends PaginationParams {
+  search?: string;
+  role?: string;
+  status?: string;
+  department?: string;
 }

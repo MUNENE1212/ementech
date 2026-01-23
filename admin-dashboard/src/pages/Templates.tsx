@@ -12,7 +12,7 @@ import { Input } from '../components/ui/Input';
 import { StatusBadge } from '../components/ui/Badge';
 import { Card, CardHeader } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/Modal';
-import type { EmailTemplate } from '../types';
+import type { EmailTemplate, TemplateFilters } from '../types';
 
 const TEMPLATE_CATEGORIES = [
   'newsletter',
@@ -37,7 +37,7 @@ export const Templates: React.FC = () => {
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const { filters, updateFilter } = useFilters({
+  const { filters, updateFilter } = useFilters<TemplateFilters>({
     page: 1,
     limit: 20,
   });

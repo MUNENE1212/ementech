@@ -35,7 +35,7 @@ export const Leads: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
 
-  const { filters, updateFilter, updateFilters, resetFilters, hasActiveFilters } = useFilters<LeadFilters>({
+  const { filters, updateFilter, resetFilters, hasActiveFilters } = useFilters<LeadFilters>({
     page: 1,
     limit: 20,
   });
@@ -46,16 +46,18 @@ export const Leads: React.FC = () => {
     totalPages: 1, // Will be updated from API response
   });
 
-  const { leads, pagination: apiPagination, isLoading, refetch, createLead, deleteLead, assignLead } = useLeads({
+  const { leads, pagination: apiPagination, isLoading, refetch, createLead, deleteLead } = useLeads({
     ...filters,
     page: pagination.page,
     limit: pagination.limit,
   });
 
   // Update total pages from API
-  if (apiPagination?.totalPages && apiPagination.totalPages !== pagination.totalPages) {
-    // pagination.totalPages = apiPagination.totalPages;
-  }
+  React.useEffect(() => {
+    if (apiPagination?.totalPages && apiPagination.totalPages !== pagination.totalPages) {
+      pagination.updateTotalPages(apiPagination.totalPages);
+    }
+  }, [apiPagination?.totalPages, pagination]);
 
   const columns = [
     {

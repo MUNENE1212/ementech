@@ -14,7 +14,7 @@ import { StatusBadge } from '../components/ui/Badge';
 import { Table, Pagination } from '../components/tables/Table';
 import { ConfirmModal } from '../components/ui/Modal';
 import { Card, CardHeader } from '../components/ui/Card';
-import type { User } from '../types';
+import type { User, EmployeeFilters } from '../types';
 
 export const Employees: React.FC = () => {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export const Employees: React.FC = () => {
     );
   }
 
-  const { filters, updateFilter } = useFilters({
+  const { filters, updateFilter } = useFilters<EmployeeFilters>({
     page: 1,
     limit: 20,
   });
@@ -145,7 +145,7 @@ export const Employees: React.FC = () => {
   };
 
   const handleInvite = async (email: string, role: string) => {
-    await inviteEmployee(email, role);
+    await inviteEmployee({ email, role });
     refetch();
   };
 

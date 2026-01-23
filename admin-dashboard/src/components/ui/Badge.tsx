@@ -63,9 +63,10 @@ export const Badge: React.FC<BadgeProps> = ({
 interface StatusBadgeProps {
   status: string;
   size?: BadgeSize;
+  className?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', className }) => {
   const statusMap: Record<string, BadgeVariant> = {
     // Lead statuses
     new: 'info',

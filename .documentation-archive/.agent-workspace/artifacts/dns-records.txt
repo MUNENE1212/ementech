@@ -1,0 +1,350 @@
+EmenTech Email Server - DNS Records Configuration
+==================================================
+
+Domain: ementech.co.ke
+IP Address: 69.164.244.165
+Date: 2025-01-19
+
+IMPORTANT NOTES
+===============
+1. Add ALL records below to your domain registrar's DNS configuration
+2. Wait 15-30 minutes for DNS propagation after adding records
+3. Use online tools to verify propagation: https://www.whatsmydns.net/
+4. Replace [PUBLIC_KEY] in DKIM record with actual key from server
+
+COMPLETE DNS RECORDS
+====================
+
+A RECORDS
+---------
+Points subdomains to your mail server IP address.
+
+mail.ementech.co.ke.         IN A     69.164.244.165
+smtp.ementech.co.ke.         IN A     69.164.244.165
+imap.ementech.co.ke.         IN A     69.164.244.165
+pop.ementech.co.ke.          IN A     69.164.244.165
+webmail.ementech.co.ke.      IN A     69.164.244.165
+
+What these do:
+- mail: Main mail server address
+- smtp: SMTP server for sending mail
+- imap: IMAP server for receiving mail
+- pop: POP3 server (alternative to IMAP)
+- webmail: Webmail interface
+
+MX RECORD
+---------
+Tells other mail servers where to deliver email for your domain.
+
+ementech.co.ke.              IN MX 10 mail.ementech.co.ke.
+
+What this does:
+- Routes all email @ementech.co.ke to mail.ementech.co.ke
+- Priority 10 (lower = higher priority)
+- Only one MX record needed for single server setup
+
+SPF TXT RECORD
+--------------
+Prevents spam spoofing by specifying which IPs can send email for your domain.
+
+ementech.co.ke.              IN TXT "v=spf1 mx a ip4:69.164.244.165 -all"
+
+What this does:
+- v=spf1: SPF version 1
+- mx: Allow servers listed in MX records
+- a: Allow servers in A records
+- ip4:69.164.244.165: Allow this specific IP
+- -all: Reject all other IPs (hard fail - strict security)
+
+How to verify:
+dig +short TXT ementech.co.ke
+Expected: "v=spf1 mx a ip4:69.164.244.165 -all"
+
+DMARC TXT RECORD
+----------------
+Email authentication policy that tells receiving servers what to do with emails that fail SPF/DKIM checks.
+
+_dmarc.ementech.co.ke.       IN TXT "v=DMARC1; p=quarantine; rua=mailto:admin@ementech.co.ke; ruf=mailto:admin@ementech.co.ke; sp=none; aspf=s; adkim=s; rf=afrf; pct=100; ri=86400"
+
+What this does:
+- v=DMARC1: DMARC version 1
+- p=quarantine: Quarantine emails that fail (start with this, change to reject after 2 weeks)
+- rua: Send aggregate reports to admin@ementech.co.ke
+- ruf: Send forensic reports to admin@ementech.co.ke
+- sp=none: No policy for subdomains
+- aspf=s: Strict SPF alignment (must match exactly)
+- adkim=s: Strict DKIM alignment (must match exactly)
+- pct=100: Apply policy to 100% of emails
+- ri=86400: Send reports every 24 hours
+
+How to verify:
+dig +short TXT _dmarc.ementech.co.ke
+Expected: "v=DMARC1; p=quarantine; rua=mailto:admin@ementech.co.ke; ..."
+
+DKIM TXT RECORD
+---------------
+Public key that allows receiving servers to verify emails were sent by your server and not modified in transit.
+
+default._domainkey.ementech.co.ke. IN TXT "v=DKIM1; k=rsa; p=[PUBLIC_KEY]"
+
+IMPORTANT: Replace [PUBLIC_KEY] with actual key from server:
+1. SSH into server
+2. Run: sudo rspamadm dkim_keygen -d ementech.co.ke -s default -k 2048 | grep "p=" | sed 's/p=//; s/"//g' | tr -d '\n'
+3. Copy the output and replace [PUBLIC_KEY] above
+
+What this does:
+- v=DKIM1: DKIM version 1
+- k=rsa: Encryption algorithm (RSA)
+- p: Public key for verifying signatures
+
+How to verify:
+dig +short TXT default._domainkey.ementech.co.ke
+Expected: "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQD..."
+
+SRV RECORDS (Optional but Recommended)
+--------------------------------------
+Help email clients autoconfigure settings.
+
+_submission._tcp.ementech.co.ke.     IN SRV 0 1 587 mail.ementech.co.ke.
+_submissions._tcp.ementech.co.ke.    IN SRV 0 1 465 mail.ementech.co.ke.
+_imaps._tcp.ementech.co.ke.          IN SRV 0 1 993 mail.ementech.co.ke.
+_pop3s._tcp.ementech.co.ke.          IN SRV 0 1 995 mail.ementech.co.ke.
+
+What these do:
+- _submission: SMTP submission port (587)
+- _submissions: SMTPS port (465)
+- _imaps: IMAPS port (993)
+- _pop3s: POP3S port (995)
+- Help clients auto-discover mail server settings
+
+PTR RECORD (Reverse DNS)
+-------------------------
+Configure at your VPS provider, NOT at domain registrar.
+
+165.244.164.69.in-addr.arpa. IN PTR mail.ementech.co.ke.
+
+What this does:
+- Maps IP address back to hostname
+- Required for proper email delivery
+- Many email providers reject mail from IPs without PTR
+
+How to configure:
+1. Log in to Linode/DigitalOcean/AWS console
+2. Find your VPS instance
+3. Look for Networking or DNS settings
+4. Add PTR record: 69.164.244.165 → mail.ementech.co.ke
+
+How to verify:
+dig -x 69.164.244.165 +short
+Expected: mail.ementech.co.ke.
+
+VERIFICATION COMMANDS
+=====================
+Run these commands to verify DNS records are correct and propagated.
+
+# Check A records
+echo "Checking A records..."
+dig +short mail.ementech.co.ke A
+dig +short smtp.ementech.co.ke A
+dig +short imap.ementech.co.ke A
+dig +short webmail.ementech.co.ke A
+echo "Expected: 69.164.244.165 for all A records"
+echo ""
+
+# Check MX record
+echo "Checking MX record..."
+dig +short MX ementech.co.ke
+echo "Expected: 10 mail.ementech.co.ke."
+echo ""
+
+# Check SPF record
+echo "Checking SPF record..."
+dig +short TXT ementech.co.ke | grep spf
+echo "Expected: \"v=spf1 mx a ip4:69.164.244.165 -all\""
+echo ""
+
+# Check DMARC record
+echo "Checking DMARC record..."
+dig +short TXT _dmarc.ementech.co.ke
+echo "Expected: \"v=DMARC1; p=quarantine; rua=mailto:admin@ementech.co.ke; ...\""
+echo ""
+
+# Check DKIM record
+echo "Checking DKIM record..."
+dig +short TXT default._domainkey.ementech.co.ke
+echo "Expected: \"v=DKIM1; k=rsa; p=MIGfMA0GCSq...\""
+echo ""
+
+# Check PTR record
+echo "Checking PTR record..."
+dig -x 69.164.244.165 +short
+echo "Expected: mail.ementech.co.ke."
+echo ""
+
+# Check from external DNS servers (tests propagation)
+echo "Checking propagation from Google DNS (8.8.8.8)..."
+dig @8.8.8.8 +short MX ementech.co.ke
+dig @8.8.8.8 +short TXT ementech.co.ke
+echo ""
+
+echo "Checking propagation from Cloudflare DNS (1.1.1.1)..."
+dig @1.1.1.1 +short MX ementech.co.ke
+dig @1.1.1.1 +short TXT _dmarc.ementech.co.ke
+echo ""
+
+ONLINE VERIFICATION TOOLS
+==========================
+Use these tools to verify your DNS configuration:
+
+1. MXToolbox - DNS Lookup
+   https://mxtoolbox.com/DNSLookup.aspx
+   Check: A, MX, TXT, DMARC records
+
+2. MXToolbox - Diagnostics
+   https://mxtoolbox.com/diagnostic.aspx
+   Run full mail server diagnostics
+
+3. DNS Checker - Propagation
+   https://www.whatsmydns.net/
+   Check DNS propagation worldwide
+
+4. DMARC Analyzer - DMARC Check
+   https://www.dmarcanalyzer.com/dmarc/dmarc-check
+   Verify DMARC record is valid
+
+5. Mail-Tester - Deliverability
+   https://www.mail-tester.com/
+   Send test email and check SPF/DKIM/DMARC
+
+6. DNSlytics - DNS Report
+   https://dnslytics.com/
+   Comprehensive DNS analysis
+
+COMMON DNS REGISTRARS
+=====================
+Where to add these records based on your registrar:
+
+NAMECHEAP
+---------
+1. Log in to Namecheap
+2. Domain List → [Select ementech.co.ke]
+3. Advanced DNS
+4. Add New Record
+5. Select type (A, MX, TXT, etc.)
+6. Enter host and value
+7. Save All Changes
+
+GODADDY
+-------
+1. Log in to GoDaddy
+2. My Products → Domains
+3. Select ementech.co.ke
+4. DNS Management
+5. Add
+6. Select type and enter values
+7. Save
+
+CLOUDFLARE
+----------
+1. Log in to Cloudflare
+2. Select ementech.co.ke
+3. DNS → Add Record
+4. Select type and enter values
+5. Save
+
+AWS ROUTE 53
+-------------
+1. Log in to AWS Console
+2. Route 53 → Hosted Zones
+3. Select ementech.co.ke
+4. Create Record Set
+5. Enter name, type, and value
+6. Save
+
+DIGITALOCEAN
+------------
+1. Log in to DigitalOcean
+2. Networking → Domains
+3. Select ementech.co.ke
+4. Add Record
+5. Enter type and values
+6. Create
+
+TROUBLESHOOTING
+===============
+
+DNS records not appearing:
+- Wait 15-30 minutes for DNS propagation
+- Check records are saved at registrar
+- Verify no typos in records
+- Clear local DNS cache: sudo systemd-resolve --flush-caches
+
+MX record not working:
+- Verify A record for mail.ementech.co.ke exists
+- Check priority number is correct
+- Use: dig +short MX ementech.co.ke
+
+SPF/DKIM/DMARC failing:
+- Use: https://mxtoolbox.com/deliverability
+- Check record syntax is correct
+- Verify no spaces in quotes
+- Check TTL settings
+
+Email going to spam:
+- Verify SPF passes
+- Verify DKIM is signing
+- Verify DMARC passes
+- Check PTR record exists
+- Build IP reputation (start slow)
+
+PTR record issues:
+- Contact VPS provider support
+- Cannot be set at domain registrar
+- Must be configured by IP owner
+
+WARM-UP SCHEDULE
+================
+After DNS is configured, follow this schedule to build IP reputation:
+
+Day 1-3: Send 20-50 emails per day
+Day 4-7: Send 50-100 emails per day
+Day 8-14: Send 100-200 emails per day
+Day 15-21: Send 200-500 emails per day
+Day 22+: Normal volume
+
+Tips:
+- Send to engaged recipients first
+- Monitor spam folder placement
+- Check deliverability scores daily
+- Adjust volume if bounce rate > 2%
+
+EMERGENCY DNS RECORDS
+====================
+If you need to quickly stop all email delivery (emergency):
+
+; Remove or comment out MX record
+; ementech.co.ke.  IN MX 10 mail.ementech.co.ke.
+
+; Change SPF to reject all
+ementech.co.ke.  IN TXT "v=spf1 -all"
+
+This will:
+- Stop incoming email
+- Prevent outgoing email from being accepted
+- Use only in emergency situations!
+
+SUPPORT
+=======
+For DNS issues:
+- Check logs: /var/log/mail.log
+- Use diagnostic tools above
+- Contact registrar support
+- Check: https://mxtoolbox.com/
+
+For mail server issues:
+- See: /root/mail-server-documentation.md
+- Run: /root/mail-server-status.sh
+- Check: /var/log/mail.log
+
+DOCUMENTATION VERSION: 1.0
+LAST UPDATED: 2025-01-19

@@ -4,10 +4,9 @@
  */
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { Input, Textarea, Select } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
-import type { Lead } from '../types';
+import { Input, Textarea, Select } from '../ui/Input';
+import { Button } from '../ui/Button';
+import type { Lead } from '../../types';
 
 interface LeadFormProps {
   lead?: Partial<Lead>;
