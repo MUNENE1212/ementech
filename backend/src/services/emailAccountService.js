@@ -576,7 +576,7 @@ export async function testMailboxConnection(email, password) {
 }
 
 /**
- * Tests IMAP connection
+ * Tests IMAP connection with proper TLS configuration
  */
 async function testIMAPConnection(email, password) {
   return new Promise((resolve, reject) => {
@@ -586,8 +586,15 @@ async function testIMAPConnection(email, password) {
       host: MAIL_SERVER.imap.host,
       port: MAIL_SERVER.imap.port,
       tls: MAIL_SERVER.imap.tls,
-      tlsOptions: { rejectUnauthorized: false },
-      connTimeout: 10000
+      tlsOptions: {
+        // Secure TLS configuration
+        minVersion: 'TLSv1.2',
+        // Validate certificates in production
+        rejectUnauthorized: process.env.NODE_ENV === 'production',
+        servername: MAIL_SERVER.imap.host,
+      },
+      connTimeout: 10000,
+      authTimeout: 10000,
     });
 
     imap.once('ready', () => {
@@ -604,18 +611,27 @@ async function testIMAPConnection(email, password) {
 }
 
 /**
- * Tests SMTP connection
+ * Tests SMTP connection with proper TLS/STARTTLS configuration
  */
 async function testSMTPConnection(email, password) {
   try {
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: MAIL_SERVER.smtp.host,
       port: MAIL_SERVER.smtp.port,
       secure: MAIL_SERVER.smtp.secure,
       auth: {
         user: email,
         pass: password
-      }
+      },
+      // Force STARTTLS for port 587
+      requireTLS: !MAIL_SERVER.smtp.secure && MAIL_SERVER.smtp.port === 587,
+      // TLS configuration
+      tls: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: process.env.NODE_ENV === 'production',
+        servername: MAIL_SERVER.smtp.host,
+      },
+      connectionTimeout: 10000,
     });
 
     await transporter.verify();
@@ -791,14 +807,23 @@ export async function getUserEmailCredentials(userId) {
  */
 export async function sendWelcomeEmail(email, name, tempPassword) {
   try {
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: MAIL_SERVER.smtp.host,
       port: MAIL_SERVER.smtp.port,
       secure: MAIL_SERVER.smtp.secure,
       auth: {
         user: process.env.SMTP_USER || `noreply@${EMAIL_DOMAIN}`,
         pass: process.env.SMTP_PASS
-      }
+      },
+      // Force STARTTLS for port 587
+      requireTLS: !MAIL_SERVER.smtp.secure && MAIL_SERVER.smtp.port === 587,
+      // Secure TLS configuration
+      tls: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: process.env.NODE_ENV === 'production',
+        servername: MAIL_SERVER.smtp.host,
+      },
+      connectionTimeout: 30000,
     });
 
     const mailOptions = {

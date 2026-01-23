@@ -3,6 +3,11 @@ import nodemailer from 'nodemailer';
 import Campaign from '../models/Campaign.js';
 import EmailTemplate from '../models/EmailTemplate.js';
 import Lead from '../models/Lead.js';
+import {
+  createPooledSecureTransport,
+  generateSecurityHeaders,
+  TLS_CONFIG,
+} from '../services/emailSecurityService.js';
 
 /**
  * Email Queue Module - Phase 3: Email Marketing & Campaigns
@@ -14,8 +19,10 @@ import Lead from '../models/Lead.js';
  * - Rate limiting support
  * - Job completion and failure handlers
  * - Integration with nodemailer for actual sending
+ * - Secure TLS/STARTTLS configuration
+ * - DKIM signing support (when configured)
  *
- * @version 1.0.0
+ * @version 1.1.0
  * @since 2026-01-23
  */
 
@@ -83,24 +90,55 @@ const priorityEmailQueue = new Bull('priority-email-queue', {
 
 /**
  * Create nodemailer transport with pool for efficiency
+ * Uses secure TLS configuration from emailSecurityService
  */
 const createTransport = () => {
+  const host = process.env.SMTP_HOST || 'mail.ementech.co.ke';
+  const port = parseInt(process.env.SMTP_PORT, 10) || 587;
+  const secure = process.env.SMTP_SECURE === 'true';
+
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'mail.ementech.co.ke',
-    port: parseInt(process.env.SMTP_PORT, 10) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
+    host,
+    port,
+    secure,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    pool: true,           // Use pooled connections
-    maxConnections: 5,    // Max 5 simultaneous connections
-    maxMessages: 100,     // Max messages per connection before reconnecting
-    rateDelta: 1000,      // Check rate limit every second
-    rateLimit: 10,        // Max 10 messages per second
+
+    // Connection pooling for bulk sending
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 10,
+
+    // Connection timeouts
+    connectionTimeout: 30000, // 30 seconds
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
+
+    // Force STARTTLS for port 587
+    requireTLS: !secure && port === 587,
+
+    // Secure TLS configuration
     tls: {
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
+      ...TLS_CONFIG,
+      servername: host,
     },
+
+    // DKIM signing (if configured)
+    ...(process.env.DKIM_PRIVATE_KEY && {
+      dkim: {
+        domainName: process.env.EMAIL_DOMAIN || 'ementech.co.ke',
+        keySelector: process.env.DKIM_SELECTOR || 'default',
+        privateKey: process.env.DKIM_PRIVATE_KEY,
+      },
+    }),
+
+    // Enable debug logging in development
+    debug: process.env.NODE_ENV === 'development',
+    logger: process.env.NODE_ENV === 'development',
   });
 };
 
@@ -309,7 +347,15 @@ const processSingleEmailJob = async (job) => {
 
     const rendered = templateInstance.render(personalizationData, 'html');
 
-    // Prepare email options
+    // Generate security headers with proper unsubscribe support (RFC 8058)
+    const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://ementech.co.ke'}/unsubscribe?id=${recipient._id}&campaign=${campaignId}`;
+    const securityHeaders = generateSecurityHeaders({
+      campaignId,
+      leadId: recipient._id?.toString(),
+      unsubscribeUrl,
+    });
+
+    // Prepare email options with security headers
     const mailOptions = {
       from: `"${sender.name}" <${sender.email}>`,
       to: recipient.email,
@@ -317,9 +363,9 @@ const processSingleEmailJob = async (job) => {
       html: rendered.body,
       text: templateInstance.render(personalizationData, 'text').body,
       headers: {
-        'X-Campaign-ID': campaignId,
-        'X-Lead-ID': recipient._id,
-        'List-Unsubscribe': `<mailto:unsubscribe@ementech.co.ke?subject=Unsubscribe&body=${recipient._id}>`,
+        ...securityHeaders,
+        // Also add mailto unsubscribe for older clients
+        'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:unsubscribe@ementech.co.ke?subject=Unsubscribe&body=${recipient._id}>`,
       },
     };
 

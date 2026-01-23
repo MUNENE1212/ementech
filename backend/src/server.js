@@ -99,6 +99,7 @@ import sequenceRoutes from './routes/sequence.routes.js';
 import abTestRoutes from './routes/abTest.routes.js';
 import socialRoutes from './routes/social.routes.js';
 import analyticsDashboardRoutes from './routes/analyticsDashboard.routes.js';
+import emailDiagnosticsRoutes from './routes/emailDiagnostics.routes.js';
 
 // Rate limiting middleware
 import { apiLimiter, leadCreationLimiter, chatLimiter, downloadLimiter } from './middleware/rateLimiter.js';
@@ -117,6 +118,7 @@ app.use('/api/sequences', apiLimiter, sequenceRoutes);
 app.use('/api/abtests', apiLimiter, abTestRoutes);
 app.use('/api/social', apiLimiter, socialRoutes);
 app.use('/api/analytics-dashboard', apiLimiter, analyticsDashboardRoutes);
+app.use('/api/email-diagnostics', apiLimiter, emailDiagnosticsRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -170,6 +172,7 @@ const startServer = async () => {
       console.log('📬 Email sequences & drip campaigns ready');
       console.log('🔗 Social media integration ready');
       console.log('📊 Analytics dashboard ready');
+      console.log('🔐 Email security & diagnostics ready');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
