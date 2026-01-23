@@ -1,5 +1,7 @@
 import { Github, Linkedin, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router';
+import NewsletterSignup from '../lead-capture/NewsletterSignup';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,16 +13,16 @@ const Footer = () => {
   ];
 
   const quickLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'Products', href: '#products' },
-    { name: 'Services', href: '#services' },
-    { name: 'About', href: '#about' },
+    { name: 'Home', path: '/' },
+    { name: 'Products', path: '/products' },
+    { name: 'Services', path: '/services' },
+    { name: 'About', path: '/about' },
   ];
 
   const legalLinks = [
-    { name: 'Privacy Policy', href: '#' },
-    { name: 'Terms of Service', href: '#' },
-    { name: 'Cookie Policy', href: '#' },
+    { name: 'Privacy Policy', path: '/privacy' },
+    { name: 'Terms of Service', path: '/terms' },
+    { name: 'Careers', path: '/careers' },
   ];
 
   return (
@@ -34,11 +36,14 @@ const Footer = () => {
             viewport={{ once: true }}
             className="space-y-4"
           >
-            <div className="flex items-center justify-center">
+            <div className="flex items-center">
               <img
-                src="/ementech-mono-logo-light.png"
+                src="/ementech-logo.png"
                 alt="Ementech"
+                width="200"
+                height="80"
                 className="h-20 w-auto object-contain"
+                loading="lazy"
               />
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
@@ -71,12 +76,12 @@ const Footer = () => {
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.path}
                     className="text-gray-400 hover:text-primary-400 transition-colors text-sm"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -121,24 +126,45 @@ const Footer = () => {
             <ul className="space-y-2">
               {legalLinks.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.path}
                     className="text-gray-400 hover:text-primary-400 transition-colors text-sm"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </motion.div>
         </div>
 
+        {/* Newsletter Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="mt-12 pt-8 border-t border-dark-800"
+        >
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Stay Informed
+              </h3>
+              <p className="text-sm text-gray-400">
+                Get weekly AI insights and tech trends delivered to your inbox
+              </p>
+            </div>
+            <NewsletterSignup context="footer" variant="minimal" />
+          </div>
+        </motion.div>
+
         {/* Bottom Bar */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
           className="mt-12 pt-8 border-t border-dark-800"
         >
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">

@@ -1,296 +1,557 @@
-# VPS Deployment Guide for Ementech Website
+# EmenTech Deployment Guide
 
-This guide covers deploying the Ementech corporate website to a VPS alongside existing projects.
+**Last Updated**: 2026-01-20
+**Status**: Production Live
+**URL**: https://ementech.co.ke
 
-## Prerequisites
+---
 
-- VPS with Ubuntu/Debian
-- Root or sudo access
-- Domain name configured
-- Node.js 18+ installed
-- Nginx installed
+## Quick Reference
 
-## Architecture Overview
+### Server Details
+- **VPS**: Ubuntu Linux 6.14.0-37-generic
+- **IP**: 69.164.244.165
+- **SSH**: `ssh root@69.164.244.165`
+- **Domain**: ementech.co.ke, www.ementech.co.ke
 
-The website will be deployed as the main domain with the following structure:
-
+### Running Services
 ```
-yourdomain.com/          → Ementech Website (this project)
-yourdomain.com/green_rent  → Green Rent Project
-yourdomain.com/smartbiz   → SmartBiz Project
+PM2 Processes:
+├── ementech-backend (PID: 1640) - Port 5001
+└── dumuwaks-backend (PID: 1637) - Separate project
+
+Nginx:
+├── HTTPS (443) - Frontend + API proxy
+└── HTTP (80) - Redirects to HTTPS
+
+MongoDB:
+└── Connection via MONGODB_URI
 ```
 
-## Step 1: Build the Application
+---
 
-On your local machine:
+## Deployment Structure
 
+### Directory Layout
+```
+/var/www/
+├── ementech-website/
+│   ├── backend/               # Backend application
+│   │   ├── src/
+│   │   ├── node_modules/
+│   │   ├── package.json
+│   │   └── .env              # Environment variables
+│   ├── current/               # Frontend build output
+│   │   ├── index.html
+│   │   └── assets/
+│   ├── frontend/              # Previous builds
+│   └── releases/              # Deployment history
+│
+└── dumuwaks-backend/          # Separate project
+```
+
+### Backend Configuration
+**Location**: `/var/www/ementech-website/backend`
+
+**PM2 App Name**: `ementech-backend`
+
+**Entry Point**: `src/server.js`
+
+**Port**: 5001
+
+**Environment Variables** (`.env`):
 ```bash
+PORT=5001
+NODE_ENV=production
+MONGODB_URI=mongodb://...
+CORS_ORIGIN=https://ementech.co.ke,https://www.ementech.co.ke
+JWT_SECRET=...
+JWT_EXPIRE=7d
+
+# Email IMAP
+IMAP_HOST=...
+IMAP_PORT=993
+IMAP_USER=...
+IMAP_PASSWORD=...
+
+# Email SMTP
+SMTP_HOST=...
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
+```
+
+### Frontend Configuration
+**Location**: `/var/www/ementech-website/current`
+
+**Served By**: Nginx (static files)
+
+**Build Command**: `npm run build`
+
+**Output**: `dist/` → copied to `/var/www/ementech-website/current`
+
+**Vite Config** (vite.config.ts):
+```typescript
+export default defineConfig({
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://localhost:5001',
+      '/socket.io': {
+        target: 'http://localhost:5001',
+        ws: true
+      }
+    }
+  }
+})
+```
+
+---
+
+## Nginx Configuration
+
+### Site Configuration
+**File**: `/etc/nginx/sites-available/ementech.conf`
+
+**Symlink**: `/etc/nginx/sites-enabled/ementech.conf`
+
+### Configuration Content
+```nginx
+# HTTP to HTTPS redirect
+server {
+    listen 80;
+    server_name ementech.co.ke www.ementech.co.ke;
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    server_name ementech.co.ke www.ementech.co.ke;
+
+    # SSL certificates
+    ssl_certificate /etc/letsencrypt/live/ementech.co.ke/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ementech.co.ke/privkey.pem;
+
+    # Frontend static files
+    root /var/www/ementech-website/current;
+    index index.html;
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://localhost:5001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Socket.IO proxy (WebSocket)
+    location /socket.io/ {
+        proxy_pass http://localhost:5001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Frontend fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+### SSL Certificates
+**Provider**: Let's Encrypt
+
+**Certificate Path**: `/etc/letsencrypt/live/ementech.co.ke/`
+
+**Renewal**: Certbot auto-renews (cron job)
+
+---
+
+## Deployment Process
+
+### Initial Deployment (Already Done)
+1. **Server Setup**
+   - Ubuntu server provisioned
+   - User accounts created
+   - Firewall configured (ports 22, 80, 443, 5001)
+   - MongoDB installed/configured
+
+2. **Nginx Setup**
+   - Nginx installed
+   - SSL certificates obtained (certbot)
+   - Site configuration created
+   - Symlinked to sites-enabled
+
+3. **Backend Deployment**
+   - Code uploaded to `/var/www/ementech-website/backend`
+   - Dependencies installed: `npm install`
+   - Environment variables configured: `.env`
+   - PM2 process started: `pm2 start ementech-backend`
+
+4. **Frontend Deployment**
+   - Code built locally: `npm run build`
+   - Build output uploaded to `/var/www/ementech-website/current`
+   - Nginx reloaded: `systemctl reload nginx`
+
+### Updating Frontend
+```bash
+# Local machine
 cd /media/munen/muneneENT/ementech/ementech-website
+npm run build
+
+# Upload to VPS
+ssh root@69.164.244.165
+cd /var/www/ementech-website
+mkdir -p releases/$(date +%Y%m%d-%H%M%S)
+cp -r current releases/$(date +%Y%m%d-%H%M%S)/
+
+# From local machine (in project directory)
+scp -r dist/* root@69.164.244.165:/var/www/ementech-website/current/
+
+# On VPS - Verify and reload nginx
+ssh root@69.164.244.165 "ls -la /var/www/ementech-website/current && systemctl reload nginx"
+```
+
+### Updating Backend
+```bash
+# Upload new code
+ssh root@69.164.244.165
+cd /var/www/ementech-website/backend
+
+# Pull from git or upload files
+git pull origin main  # if using git
+# OR upload files manually
 
 # Install dependencies
 npm install
 
-# Build for production
+# Restart PM2 process
+pm2 restart ementech-backend
+
+# Check logs
+pm2 logs ementech-backend --lines 50
+```
+
+### Full Deployment Script
+```bash
+#!/bin/bash
+# deploy.sh
+
+echo "Building frontend..."
 npm run build
 
-# The dist folder will contain the production files
+echo "Uploading frontend to VPS..."
+scp -r dist/* root@69.164.244.165:/var/www/ementech-website/current/
+
+echo "Restarting backend..."
+ssh root@69.164.244.165 "cd /var/www/ementech-website/backend && pm2 restart ementech-backend"
+
+echo "Reloading nginx..."
+ssh root@69.164.244.165 "systemctl reload nginx"
+
+echo "Deployment complete!"
+echo "Check: https://ementech.co.ke"
 ```
 
-## Step 2: Upload to VPS
+---
 
+## PM2 Management
+
+### Commands
 ```bash
-# Upload dist folder to VPS
-scp -r dist/ user@your-vps-ip:/var/www/ementech
+# List all processes
+pm2 list
 
-# Or use rsync
-rsync -avz dist/ user@your-vps-ip:/var/www/ementech/
+# Show ementech-backend details
+pm2 show ementech-backend
+
+# View logs
+pm2 logs ementech-backend
+pm2 logs ementech-backend --lines 100
+
+# Restart
+pm2 restart ementech-backend
+
+# Stop
+pm2 stop ementech-backend
+
+# Start
+pm2 start /var/www/ementech-website/backend/src/server.js --name ementech-backend
+
+# Monitor
+pm2 monit
 ```
 
-## Step 3: Configure Nginx
-
-### Create Nginx Configuration
-
-```bash
-sudo nano /etc/nginx/sites-available/ementech
-```
-
-Add the following configuration:
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com www.yourdomain.com;
-
-    # Ementech Website (Main)
-    location / {
-        root /var/www/ementech;
-        try_files $uri $uri/ /index.html;
-        index index.html;
-
-        # Cache static assets
-        location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$ {
-            expires 1y;
-            add_header Cache-Control "public, immutable";
-        }
-    }
-
-    # Green Rent Project
-    location /green_rent {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # SmartBiz Project
-    location /smartbiz {
-        proxy_pass http://localhost:3002;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Gzip Compression
-    gzip on;
-    gzip_vary on;
-    gzip_proxied any;
-    gzip_comp_level 6;
-    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
-
-    # Security Headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+### PM2 Ecosystem File (Optional)
+Create `ecosystem.config.js` in backend directory:
+```javascript
+module.exports = {
+  apps: [{
+    name: 'ementech-backend',
+    script: './src/server.js',
+    cwd: '/var/www/ementech-website/backend',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 5001
+    },
+    error_file: '/var/log/pm2/ementech-backend-error.log',
+    out_file: '/var/log/pm2/ementech-backend-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss'
+  }]
 }
 ```
 
-### Enable the Site
+Use with: `pm2 start ecosystem.config.js`
 
+---
+
+## Monitoring & Logs
+
+### Application Logs
+**Backend PM2 Logs**:
 ```bash
-# Create symbolic link
-sudo ln -s /etc/nginx/sites-available/ementech /etc/nginx/sites-enabled/
-
-# Test configuration
-sudo nginx -t
-
-# Restart Nginx
-sudo systemctl restart nginx
+pm2 logs ementech-backend
+pm2 logs ementech-backend --err  # Errors only
+pm2 logs ementech-backend --out  # Standard output
 ```
 
-## Step 4: Set Up SSL Certificate
-
+**Nginx Logs**:
 ```bash
-# Install Certbot
-sudo apt update
-sudo apt install certbot python3-certbot-nginx
+# Access logs
+tail -f /var/log/nginx/access.log
 
-# Obtain SSL certificate
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+# Error logs
+tail -f /var/log/nginx/error.log
 
-# Certbot will automatically configure SSL
-# Choose to redirect HTTP to HTTPS when prompted
+# Site-specific logs
+tail -f /var/log/nginx/ementech-access.log
+tail -f /var/log/nginx/ementech-error.log
 ```
 
-Auto-renewal is configured automatically.
-
-## Step 5: Set Permissions
-
+**System Logs**:
 ```bash
-# Set proper ownership
-sudo chown -R www-data:www-data /var/www/ementech
+# System journal
+journalctl -u nginx -f
+journalctl -u pm2-root -f
 
-# Set proper permissions
-sudo chmod -R 755 /var/www/ementech
+# Authentication logs
+tail -f /var/log/auth.log
 ```
 
-## Step 6: Configure Firewall
-
+### Health Checks
 ```bash
-# Allow HTTP and HTTPS
-sudo ufw allow 'Nginx Full'
+# Backend health endpoint
+curl https://ementech.co.ke/api/health
 
-# Enable firewall
-sudo ufw enable
-
-# Check status
-sudo ufw status
+# Expected response
+{
+  "status": "healthy",
+  "timestamp": "2026-01-20T...",
+  "uptime": 123456.789,
+  "environment": "production"
+}
 ```
 
-## Step 7: Update Product Links
-
-Make sure product links in `src/components/sections/Products.tsx` point to the correct paths:
-
-```tsx
-path: '/green_rent'   // Will route to yourdomain.com/green_rent
-path: '/smartbiz'     // Will route to yourdomain.com/smartbiz
-```
-
-## Alternative: Deploy as Subdomains
-
-If you prefer subdomains:
-
-```
-ementech.com         → Main website
-greenrent.ementech.com → Green Rent
-smartbiz.ementech.com  → SmartBiz
-```
-
-Create separate Nginx server blocks for each subdomain.
-
-## Monitoring and Maintenance
-
-### Check Nginx Logs
-
-```bash
-# Access log
-sudo tail -f /var/log/nginx/access.log
-
-# Error log
-sudo tail -f /var/log/nginx/error.log
-```
-
-### Restart Services
-
-```bash
-# Restart Nginx
-sudo systemctl restart nginx
-
-# Reload Nginx (no downtime)
-sudo systemctl reload nginx
-```
-
-## Performance Optimization
-
-### Enable HTTP/2
-
-The SSL configuration automatically enables HTTP/2.
-
-### Enable Browser Caching
-
-Already configured in the Nginx config above.
-
-### Enable CDN (Optional)
-
-Consider using a CDN like Cloudflare for:
-- DDoS protection
-- Global CDN
-- SSL termination
-- Caching
+---
 
 ## Troubleshooting
 
-### 502 Bad Error
+### Backend Issues
 
-Check if your backend services are running:
+**Problem**: Backend not starting
 ```bash
-sudo netstat -tlnp | grep :3001
-sudo netstat -tlnp | grep :3002
+# Check PM2 status
+pm2 list
+
+# Check logs
+pm2 logs ementech-backend --lines 100
+
+# Common issues:
+# 1. MongoDB connection error → Check MONGODB_URI
+# 2. Port already in use → Check if port 5001 is free
+# 3. Missing env vars → Check .env file exists
 ```
 
-### Permission Denied
-
+**Problem**: Database connection failed
 ```bash
-sudo chown -R www-data:www-data /var/www/ementech
-sudo chmod -R 755 /var/www/ementech
+# Verify MongoDB is running
+systemctl status mongod
+
+# Test connection string
+mongosh "mongodb://..."
+
+# Check firewall
+telnet mongodb-host 27017
 ```
 
-### Nginx Won't Start
-
+**Problem**: Email sync not working
 ```bash
-# Check syntax
-sudo nginx -t
+# Check IMAP credentials
+# Test IMAP connection
+openssl s_client -connect IMAP_HOST:993 -crlf
 
-# Check error log
-sudo tail -f /var/log/nginx/error.log
+# Check email service logs
+pm2 logs ementech-backend | grep -i email
 ```
 
-## Updates
+### Frontend Issues
 
-To update the website:
-
+**Problem**: Site not loading
 ```bash
-# On local machine
-npm run build
+# Check nginx is running
+systemctl status nginx
 
-# Upload to VPS
-scp -r dist/* user@your-vps-ip:/var/www/ementech/
+# Check nginx config syntax
+nginx -t
 
-# Files update immediately, no need to restart Nginx
+# Reload nginx
+systemctl reload nginx
+
+# Check file permissions
+ls -la /var/www/ementech-website/current
 ```
 
-## Backup
-
+**Problem**: API calls failing
 ```bash
-# Backup website files
-sudo tar -czf ementech-backup-$(date +%Y%m%d).tar.gz /var/www/ementech
+# Check CORS configuration
+# Check backend is running
+curl http://localhost:5001/api/health
 
-# Backup Nginx config
-sudo cp /etc/nginx/sites-available/ementech ~/ementech-nginx-backup-$(date +%Y%m%d)
+# Check nginx proxy
+curl https://ementech.co.ke/api/health
 ```
 
-## Security Best Practices
+**Problem**: WebSocket/Socket.IO not connecting
+```bash
+# Check Socket.IO proxy in nginx config
+# Verify upgrade headers are set
+# Test WebSocket connection
+wscat -c https://ementech.co.ke/socket.io/
+```
 
-1. Keep system updated: `sudo apt update && sudo apt upgrade`
-2. Use strong passwords
-3. Disable root SSH login
-4. Configure firewall properly
-5. Regular backups
-6. Monitor logs regularly
+### SSL Issues
 
-## Conclusion
+**Problem**: SSL certificate expired
+```bash
+# Renew certificate
+certbot renew
 
-Your Ementech website is now deployed and accessible at your domain!
+# Reload nginx
+systemctl reload nginx
 
-For issues or questions, contact the development team.
+# Setup auto-renewal (cron)
+certbot renew --dry-run
+```
+
+**Problem**: Mixed content warnings
+```bash
+# Ensure all resources use HTTPS
+# Check console for mixed content errors
+# Update any http:// to https://
+```
+
+---
+
+## Security Checklist
+
+### Implemented ✅
+- SSL/TLS encryption (Let's Encrypt)
+- Helmet.js security headers
+- CORS configured for specific origins
+- Rate limiting on all endpoints
+- JWT authentication
+- Password hashing (bcrypt)
+- Input validation (express-validator)
+- SQL injection prevention (MongoDB sanitization)
+- XSS protection (React escaping + helmet)
+
+### Recommended 🔒
+- [ ] Configure firewall (ufw)
+  ```bash
+  ufw allow 22/tcp   # SSH
+  ufw allow 80/tcp   # HTTP
+  ufw allow 443/tcp  # HTTPS
+  ufw enable
+  ```
+
+- [ ] Setup fail2ban for SSH protection
+  ```bash
+  apt install fail2ban
+  systemctl enable fail2ban
+  ```
+
+- [ ] Regular security updates
+  ```bash
+  apt update && apt upgrade -y
+  ```
+
+- [ ] MongoDB authentication
+  ```bash
+  # Enable auth in /etc/mongod.conf
+  security:
+    authorization: enabled
+  ```
+
+- [ ] Environment variables security
+  - Never commit `.env` files
+  - Use strong secrets (JWT_SECRET)
+  - Rotate passwords regularly
+
+- [ ] Backup strategy
+  - Automated MongoDB backups
+  - Backup to offsite location
+  - Test restoration process
+
+---
+
+## Maintenance Schedule
+
+### Daily
+- Monitor PM2 process status
+- Check error logs
+- Verify site uptime
+
+### Weekly
+- Review analytics
+- Check disk space
+- Review security logs
+
+### Monthly
+- Update dependencies (npm packages)
+- MongoDB backup verification
+- SSL certificate check (auto-renews)
+- Performance review
+
+### Quarterly
+- Security audit
+- Dependency vulnerability scan
+- Database optimization
+- Backup restoration test
+
+---
+
+## Contact & Support
+
+**Development Team**: EmenTech
+**Server Location**: VPS (69.164.244.165)
+**Documentation**: ARCHITECTURE.md
+
+**Emergency Contacts**:
+- SSH Access: root@69.164.244.165
+- PM2 Dashboard: `pm2 monit`
+- Nginx Status: `systemctl status nginx`
+
+---
+
+**Based On**: Actual deployed configuration, not theory
+

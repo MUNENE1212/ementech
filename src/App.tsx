@@ -1,24 +1,210 @@
+import { Routes, Route } from 'react-router';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import Hero from './components/sections/Hero';
-import Products from './components/sections/Products';
-import Services from './components/sections/Services';
-import About from './components/sections/About';
-import Contact from './components/sections/Contact';
+import HomePage from './pages/HomePage';
+import ProductsPage from './pages/ProductsPage';
+import ServicesPage from './pages/ServicesPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import CareersPage from './pages/CareersPage';
+import EmailInbox from './pages/EmailInbox';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import NotFoundPage from './pages/NotFoundPage';
+import { EmailProvider } from './contexts/EmailContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { LeadProvider } from './contexts/LeadContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import ExitIntentPopup from './components/lead-capture/ExitIntentPopup';
+import { AIChatbot } from './components/chat';
+
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+};
+
+const pageTransition = {
+  type: 'tween' as const,
+  ease: 'anticipate' as const,
+  duration: 0.5
+};
 
 function App() {
   return (
-    <div className="min-h-screen bg-dark-950">
-      <Header />
-      <main>
-        <Hero />
-        <Products />
-        <Services />
-        <About />
-        <Contact />
-      </main>
-      <Footer />
-    </div>
+    <AuthProvider>
+      <EmailProvider>
+        <LeadProvider>
+          <div className="min-h-screen bg-dark-950">
+            <Header />
+            <main className="flex-grow">
+              <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={
+                  <motion.div
+                    key="home"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <HomePage />
+                  </motion.div>
+                } />
+                <Route path="/products" element={
+                  <motion.div
+                    key="products"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <ProductsPage />
+                  </motion.div>
+                } />
+                <Route path="/services" element={
+                  <motion.div
+                    key="services"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <ServicesPage />
+                  </motion.div>
+                } />
+                <Route path="/about" element={
+                  <motion.div
+                    key="about"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <AboutPage />
+                  </motion.div>
+                } />
+                <Route path="/contact" element={
+                  <motion.div
+                    key="contact"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <ContactPage />
+                  </motion.div>
+                } />
+                <Route path="/terms" element={
+                  <motion.div
+                    key="terms"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <TermsPage />
+                  </motion.div>
+                } />
+                <Route path="/privacy" element={
+                  <motion.div
+                    key="privacy"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <PrivacyPage />
+                  </motion.div>
+                } />
+                <Route path="/careers" element={
+                  <motion.div
+                    key="careers"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <CareersPage />
+                  </motion.div>
+                } />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/email" element={
+                  <ProtectedRoute>
+                    <motion.div
+                      key="email"
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      variants={pageVariants}
+                      transition={pageTransition}
+                      className="min-h-screen bg-dark-950"
+                    >
+                      <EmailInbox />
+                    </motion.div>
+                  </ProtectedRoute>
+                } />
+                <Route path="/email/:folder" element={
+                  <ProtectedRoute>
+                    <motion.div
+                      key="email-folder"
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      variants={pageVariants}
+                      transition={pageTransition}
+                      className="min-h-screen bg-dark-950"
+                    >
+                      <EmailInbox />
+                    </motion.div>
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={
+                  <motion.div
+                    key="notfound"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={pageVariants}
+                    transition={pageTransition}
+                  >
+                    <NotFoundPage />
+                  </motion.div>
+                } />
+              </Routes>
+            </AnimatePresence>
+          </main>
+          <Footer />
+          <ExitIntentPopup />
+          <AIChatbot />
+        </div>
+        </LeadProvider>
+      </EmailProvider>
+    </AuthProvider>
   );
 }
 

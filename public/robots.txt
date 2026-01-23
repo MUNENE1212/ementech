@@ -1,0 +1,26 @@
+# EmenTech Robots.txt
+# Allow all crawlers
+
+User-agent: *
+Allow: /
+
+# Disallow admin or private areas (if any)
+# Disallow: /admin/
+# Disallow: /private/
+
+# Sitemap location
+Sitemap: https://ementech.co.ke/sitemap.xml
+
+# Crawl-delay (optional, adjust if needed)
+# Crawl-delay: 1
+
+# Disallow specific file types
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /.env*
+
+# Allow common assets
+Allow: /images/
+Allow: /fonts/
+Allow: /css/
+Allow: /js/

@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Zap, CreditCard, Flame, Wrench, Bot, Smartphone, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Hero = () => {
@@ -119,8 +119,8 @@ const Hero = () => {
             {[
               { icon: Zap, label: 'Live Products', value: '4+' },
               { icon: Sparkles, label: 'AI Features', value: '10+' },
-              { icon: '💳', label: 'M-Pesa Integration', value: 'Active' },
-              { icon: '🔥', label: 'Transactions', value: 'Live' },
+              { icon: CreditCard, label: 'M-Pesa Integration', value: 'Active' },
+              { icon: Flame, label: 'Transactions', value: 'Live' },
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
@@ -129,10 +129,89 @@ const Hero = () => {
                 transition={{ delay: 0.1 * index + 0.7 }}
                 className="glass-card p-6 rounded-xl"
               >
+                <stat.icon className="w-6 h-6 text-primary-400 mx-auto mb-2" />
                 <div className="text-3xl font-bold gradient-text mb-2">{stat.value}</div>
                 <div className="text-sm text-gray-400">{stat.label}</div>
               </motion.div>
             ))}
+          </motion.div>
+
+          {/* Featured Product - Dumu Waks */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-12"
+          >
+            <div className="glass-card p-8 rounded-2xl border border-primary-500/30 relative overflow-hidden group">
+              {/* Gradient Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-600/10 to-accent-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+              <div className="relative z-10">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  {/* Product Icon */}
+                  <div className="flex-shrink-0">
+                    <div className="bg-gradient-to-br from-primary-500 to-accent-500 p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Wrench className="w-10 h-10 text-white" />
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+                      <h3 className="text-2xl font-bold text-white">Dumu Waks</h3>
+                      <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30">
+                        LIVE NOW
+                      </span>
+                    </div>
+
+                    <p className="text-gray-400 mb-4 max-w-2xl">
+                      Connect with skilled technicians across Kenya for all your maintenance and repair needs.
+                      From plumbing to electrical work, get it done with our AI-powered marketplace platform.
+                    </p>
+
+                    {/* Quick Features */}
+                    <div className="flex flex-wrap gap-2 mb-4 justify-center md:justify-start">
+                      {[
+                        { icon: Bot, label: 'AI Matching' },
+                        { icon: Smartphone, label: 'Works Offline' },
+                        { icon: CreditCard, label: 'M-Pesa Payments' },
+                        { icon: Star, label: 'Reviews' }
+                      ].map((feature) => (
+                        <span
+                          key={feature.label}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-dark-800/50 text-sm text-gray-300 rounded-full border border-dark-700"
+                        >
+                          <feature.icon className="w-3.5 h-3.5" />
+                          {feature.label}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* CTA Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                      <a
+                        href="https://app.ementech.co.ke"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 text-white font-semibold hover:shadow-lg hover:shadow-primary-500/50 transition-all duration-300"
+                      >
+                        <span>Try It Now</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </a>
+                      <a
+                        href="https://app.ementech.co.ke"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-primary-500 text-primary-400 font-semibold hover:bg-primary-500/10 transition-all duration-300"
+                      >
+                        <span>Learn More</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>

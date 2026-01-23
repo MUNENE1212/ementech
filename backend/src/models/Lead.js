@@ -332,22 +332,129 @@ const leadSchema = new mongoose.Schema({
 
   /**
    * Active Email Sequences
-   * Tracks which automated sequences this lead is enrolled in
+   * Tracks which automated sequences this lead is currently enrolled in
    */
   activeSequences: [{
     sequenceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'EmailSequence'
+      ref: 'Sequence',
+      required: true
     },
+    /** When the lead was enrolled in this sequence */
     enrolledAt: {
       type: Date,
       default: Date.now
     },
+    /** Current status in this sequence */
     status: {
       type: String,
-      enum: ['active', 'paused', 'completed'],
+      enum: ['active', 'paused'],
       default: 'active'
-    }
+    },
+    /** Current step index (0-based) */
+    stepIndex: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    /** When the last email was sent for this sequence */
+    lastEmailSentAt: Date,
+    /** When the sequence was paused */
+    pausedAt: Date,
+    /** When the sequence was resumed (if applicable) */
+    resumedAt: Date,
+    /** Estimated time for next email */
+    nextEmailAt: Date,
+  }],
+
+  /**
+   * Completed Sequences
+   * Tracks sequence history for leads who completed/unsubscribed
+   */
+  completedSequences: [{
+    sequenceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Sequence',
+      required: true
+    },
+    /** When enrollment was completed/ended */
+    completedAt: {
+      type: Date,
+      default: Date.now
+    },
+    /** How the enrollment ended */
+    status: {
+      type: String,
+      enum: ['completed', 'unsubscribed', 'bounced', 'removed'],
+      default: 'completed'
+    },
+    /** Final step reached */
+    finalStepIndex: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    /** Reason for completion status */
+    reason: String,
+  }],
+
+  /**
+   * Sequence History
+   * Full audit trail of all sequence enrollments
+   */
+  sequenceHistory: [{
+    sequenceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Sequence',
+      required: true
+    },
+    sequenceName: String,
+    /** Action taken */
+    action: {
+      type: String,
+      enum: ['enrolled', 'paused', 'resumed', 'completed', 'unsubscribed', 'removed'],
+    },
+    /** When the action occurred */
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    /** Step index at time of action */
+    stepIndex: {
+      type: Number,
+      default: 0
+    },
+    /** Additional context */
+    notes: String,
+    /** Who triggered the action (system/user ID) */
+    triggeredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+  }],
+
+  /**
+   * Pending Sequence Emails
+   * Tracks scheduled sequence emails waiting to be sent
+   */
+  pendingSequenceEmails: [{
+    sequenceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Sequence',
+    },
+    stepOrder: Number,
+    templateId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'EmailTemplate',
+    },
+    scheduledFor: Date,
+    sentAt: Date,
+    status: {
+      type: String,
+      enum: ['pending', 'sent', 'failed', 'cancelled'],
+      default: 'pending'
+    },
+    failureReason: String,
   }]
 });
 
@@ -374,6 +481,16 @@ leadSchema.index({ dateOfBirth: 1 });
 leadSchema.index({ companyAnniversary: 1 });
 // Compound index for value-based prioritization
 leadSchema.index({ estimatedValue: -1, probability: -1 });
+
+// Phase 4: Sequence enrollment indexes
+// Index for finding leads in specific sequences
+leadSchema.index({ 'activeSequences.sequenceId': 1, 'activeSequences.status': 1 });
+// Index for completed sequences lookup
+leadSchema.index({ 'completedSequences.sequenceId': 1 });
+// Index for sequence history lookup
+leadSchema.index({ 'sequenceHistory.sequenceId': 1 });
+// Index for pending sequence emails
+leadSchema.index({ 'pendingSequenceEmails.scheduledFor': 1, 'pendingSequenceEmails.status': 1 });
 
 // ========== Virtuals ==========
 leadSchema.virtual('daysSinceLastActivity').get(function() {
@@ -904,17 +1021,364 @@ leadSchema.statics.getUpcomingAnniversaries = async function(daysAhead = 30) {
  * Get leads enrolled in a specific sequence
  *
  * @param {string|ObjectId} sequenceId - The sequence ID
+ * @param {Object} [options] - Query options
  * @returns {Promise<Lead[]>} Array of leads enrolled in the sequence
  *
  * @example
  * const enrolledLeads = await Lead.getBySequence(sequenceId);
  */
-leadSchema.statics.getBySequence = async function(sequenceId) {
+leadSchema.statics.getBySequence = async function(sequenceId, options = {}) {
+  const { status = 'active' } = options;
+
   return this.find({
     'activeSequences.sequenceId': sequenceId,
-    'activeSequences.status': 'active',
+    'activeSequences.status': status,
     isActive: true
   });
+};
+
+/**
+ * Enroll a lead in a sequence
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @param {Object} [options] - Enrollment options
+ * @returns {Promise<Lead>} The updated lead
+ *
+ * @example
+ * await lead.enrollInSequence(sequenceId);
+ * await lead.save();
+ */
+leadSchema.methods.enrollInSequence = function(sequenceId, options = {}) {
+  const { stepIndex = 0, status = 'active' } = options;
+
+  // Check if already enrolled
+  const existingEnrollment = this.activeSequences?.find(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (existingEnrollment) {
+    throw new Error('Lead is already enrolled in this sequence');
+  }
+
+  // Initialize arrays if needed
+  if (!this.activeSequences) {
+    this.activeSequences = [];
+  }
+  if (!this.sequenceHistory) {
+    this.sequenceHistory = [];
+  }
+
+  // Add enrollment
+  this.activeSequences.push({
+    sequenceId,
+    enrolledAt: new Date(),
+    status,
+    stepIndex,
+  });
+
+  // Add to history
+  this.sequenceHistory.push({
+    sequenceId,
+    action: 'enrolled',
+    timestamp: new Date(),
+    stepIndex: 0,
+  });
+
+  return this;
+};
+
+/**
+ * Unsubscribe a lead from a sequence
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @param {string} [reason] - Reason for unsubscribing
+ * @returns {Promise<Lead>} The updated lead
+ *
+ * @example
+ * await lead.unsubscribeFromSequence(sequenceId, 'User requested');
+ * await lead.save();
+ */
+leadSchema.methods.unsubscribeFromSequence = function(sequenceId, reason) {
+  // Find enrollment
+  const enrollmentIndex = this.activeSequences?.findIndex(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (enrollmentIndex === -1 || enrollmentIndex === undefined) {
+    throw new Error('Lead is not enrolled in this sequence');
+  }
+
+  const enrollment = this.activeSequences[enrollmentIndex];
+
+  // Initialize completed sequences if needed
+  if (!this.completedSequences) {
+    this.completedSequences = [];
+  }
+  if (!this.sequenceHistory) {
+    this.sequenceHistory = [];
+  }
+
+  // Add to completed with unsubscribed status
+  this.completedSequences.push({
+    sequenceId,
+    completedAt: new Date(),
+    status: 'unsubscribed',
+    finalStepIndex: enrollment.stepIndex || 0,
+    reason: reason || 'Manually unsubscribed',
+  });
+
+  // Add to history
+  this.sequenceHistory.push({
+    sequenceId,
+    action: 'unsubscribed',
+    timestamp: new Date(),
+    stepIndex: enrollment.stepIndex || 0,
+    notes: reason,
+  });
+
+  // Remove from active
+  this.activeSequences.splice(enrollmentIndex, 1);
+
+  return this;
+};
+
+/**
+ * Pause a sequence for this lead
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @returns {Promise<Lead>} The updated lead
+ *
+ * @example
+ * await lead.pauseSequence(sequenceId);
+ * await lead.save();
+ */
+leadSchema.methods.pauseSequence = function(sequenceId) {
+  const enrollment = this.activeSequences?.find(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (!enrollment) {
+    throw new Error('Lead is not enrolled in this sequence');
+  }
+
+  if (enrollment.status === 'paused') {
+    return this; // Already paused
+  }
+
+  enrollment.status = 'paused';
+  enrollment.pausedAt = new Date();
+
+  // Add to history
+  if (!this.sequenceHistory) {
+    this.sequenceHistory = [];
+  }
+
+  this.sequenceHistory.push({
+    sequenceId,
+    action: 'paused',
+    timestamp: new Date(),
+    stepIndex: enrollment.stepIndex || 0,
+  });
+
+  return this;
+};
+
+/**
+ * Resume a paused sequence for this lead
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @returns {Promise<Lead>} The updated lead
+ *
+ * @example
+ * await lead.resumeSequence(sequenceId);
+ * await lead.save();
+ */
+leadSchema.methods.resumeSequence = function(sequenceId) {
+  const enrollment = this.activeSequences?.find(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (!enrollment) {
+    throw new Error('Lead is not enrolled in this sequence');
+  }
+
+  if (enrollment.status !== 'paused') {
+    throw new Error('Sequence is not paused for this lead');
+  }
+
+  enrollment.status = 'active';
+  enrollment.resumedAt = new Date();
+
+  // Add to history
+  if (!this.sequenceHistory) {
+    this.sequenceHistory = [];
+  }
+
+  this.sequenceHistory.push({
+    sequenceId,
+    action: 'resumed',
+    timestamp: new Date(),
+    stepIndex: enrollment.stepIndex || 0,
+  });
+
+  return this;
+};
+
+/**
+ * Advance to the next step in a sequence
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @returns {Promise<Lead>} The updated lead
+ *
+ * @example
+ * await lead.advanceSequenceStep(sequenceId);
+ * await lead.save();
+ */
+leadSchema.methods.advanceSequenceStep = function(sequenceId) {
+  const enrollment = this.activeSequences?.find(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (!enrollment) {
+    throw new Error('Lead is not enrolled in this sequence');
+  }
+
+  enrollment.stepIndex = (enrollment.stepIndex || 0) + 1;
+  enrollment.lastEmailSentAt = new Date();
+
+  // Add to history
+  if (!this.sequenceHistory) {
+    this.sequenceHistory = [];
+  }
+
+  this.sequenceHistory.push({
+    sequenceId,
+    action: 'advanced',
+    timestamp: new Date(),
+    stepIndex: enrollment.stepIndex,
+  });
+
+  return this;
+};
+
+/**
+ * Get the current progress for a sequence
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @returns {Object|null} Progress info or null if not enrolled
+ *
+ * @example
+ * const progress = lead.getSequenceProgress(sequenceId);
+ * // Returns: { stepIndex, enrolledAt, lastEmailSentAt, status }
+ */
+leadSchema.methods.getSequenceProgress = function(sequenceId) {
+  const enrollment = this.activeSequences?.find(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (!enrollment) {
+    // Check if completed
+    const completed = this.completedSequences?.find(
+      s => s.sequenceId.toString() === sequenceId.toString()
+    );
+
+    if (completed) {
+      return {
+        status: completed.status,
+        stepIndex: completed.finalStepIndex,
+        completedAt: completed.completedAt,
+        reason: completed.reason,
+      };
+    }
+
+    return null;
+  }
+
+  return {
+    status: enrollment.status,
+    stepIndex: enrollment.stepIndex || 0,
+    enrolledAt: enrollment.enrolledAt,
+    lastEmailSentAt: enrollment.lastEmailSentAt,
+    nextEmailAt: enrollment.nextEmailAt,
+    pausedAt: enrollment.pausedAt,
+  };
+};
+
+/**
+ * Check if lead is enrolled in any active sequences
+ *
+ * @returns {boolean} True if enrolled in at least one active sequence
+ *
+ * @example
+ * if (lead.hasActiveSequences()) {
+ *   console.log('Lead is in sequences');
+ * }
+ */
+leadSchema.methods.hasActiveSequences = function() {
+  return this.activeSequences && this.activeSequences.length > 0;
+};
+
+/**
+ * Get all active sequences for this lead
+ *
+ * @returns {Array} Array of active sequence enrollments
+ *
+ * @example
+ * const activeSequences = lead.getActiveSequences();
+ */
+leadSchema.methods.getActiveSequences = function() {
+  return this.activeSequences?.filter(s => s.status === 'active') || [];
+};
+
+/**
+ * Complete a sequence (mark as finished)
+ *
+ * @param {string|ObjectId} sequenceId - The sequence ID
+ * @returns {Promise<Lead>} The updated lead
+ *
+ * @example
+ * await lead.completeSequence(sequenceId);
+ * await lead.save();
+ */
+leadSchema.methods.completeSequence = function(sequenceId) {
+  const enrollmentIndex = this.activeSequences?.findIndex(
+    s => s.sequenceId.toString() === sequenceId.toString()
+  );
+
+  if (enrollmentIndex === -1 || enrollmentIndex === undefined) {
+    throw new Error('Lead is not enrolled in this sequence');
+  }
+
+  const enrollment = this.activeSequences[enrollmentIndex];
+
+  // Initialize completed sequences if needed
+  if (!this.completedSequences) {
+    this.completedSequences = [];
+  }
+  if (!this.sequenceHistory) {
+    this.sequenceHistory = [];
+  }
+
+  // Add to completed
+  this.completedSequences.push({
+    sequenceId,
+    completedAt: new Date(),
+    status: 'completed',
+    finalStepIndex: enrollment.stepIndex || 0,
+  });
+
+  // Add to history
+  this.sequenceHistory.push({
+    sequenceId,
+    action: 'completed',
+    timestamp: new Date(),
+    stepIndex: enrollment.stepIndex || 0,
+  });
+
+  // Remove from active
+  this.activeSequences.splice(enrollmentIndex, 1);
+
+  return this;
 };
 
 /**
