@@ -9,7 +9,7 @@ const getAuthToken = () => {
 
 // Create axios instance
 const api = axios.create({
-  baseURL: `${API_URL}/api/email`,
+  baseURL: `${API_URL}/email`,
   headers: {
     'Content-Type': 'application/json',
   },

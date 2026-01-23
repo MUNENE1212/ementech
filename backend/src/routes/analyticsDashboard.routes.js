@@ -15,7 +15,7 @@ import {
   getCohortAnalytics,
   getLatestSnapshot,
   generateSnapshot,
-  batchGenerateSnapshots,
+  batchGenerateSnapshotsHandler as batchGenerateSnapshots,
   exportAnalyticsCSV,
   exportAnalyticsJSON,
   getWidgets,

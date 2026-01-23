@@ -1491,7 +1491,7 @@ export async function generateCohortAnalysis(cohortType = 'week', periods = 12) 
         },
         qualified: {
           $sum: {
-            $cond: [{ $ifNull: ['$qualifiedAt', false) }, 1, 0],
+            $cond: [{ $ifNull: ['$qualifiedAt', false] }, 1, 0],
           },
         },
       },

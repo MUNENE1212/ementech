@@ -17,14 +17,14 @@ import {
   getPostById,
   createPost,
   updatePost,
-  deletePost,
-  publishPost,
+  deletePostEndpoint as deletePost,
+  publishPostNow as publishPost,
   schedulePost,
   unschedulePost,
   duplicatePost,
 
   // Analytics
-  getPostAnalytics,
+  getPostAnalyticsEndpoint as getPostAnalytics,
   getSocialAnalytics,
   refreshAnalytics,
 
@@ -38,7 +38,7 @@ import {
   bulkDeletePosts,
 
   // Media
-  uploadMedia,
+  uploadMediaEndpoint as uploadMedia,
 } from '../controllers/socialController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
