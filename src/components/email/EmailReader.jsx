@@ -30,7 +30,7 @@ const EmailReader = ({
 
   useEffect(() => {
     // Mark as read when viewed
-    if (email && !email.read) {
+    if (email && !email.isRead) {
       // Call API to mark as read
     }
   }, [email]);
@@ -72,10 +72,43 @@ const EmailReader = ({
     );
   }
 
-  const extractName = (emailString) => {
-    if (!emailString) return 'Unknown';
-    const match = emailString.match(/["']?(.*?)["']?\s*<.*?>/);
-    return match ? match[1] : emailString.split('@')[0];
+  const extractName = (emailFrom) => {
+    if (!emailFrom) return 'Unknown';
+
+    // Handle object format: { name: '...', email: '...' }
+    if (typeof emailFrom === 'object' && emailFrom.name) {
+      return emailFrom.name;
+    }
+
+    // Handle object format: { email: '...' }
+    if (typeof emailFrom === 'object' && emailFrom.email) {
+      return emailFrom.email.split('@')[0];
+    }
+
+    // Handle string format: "John Doe <john@example.com>"
+    if (typeof emailFrom === 'string') {
+      const match = emailFrom.match(/["']?(.*?)["']?\s*<.*?>/);
+      return match ? match[1] : emailFrom.split('@')[0];
+    }
+
+    return 'Unknown';
+  };
+
+  const extractEmail = (emailFrom) => {
+    if (!emailFrom) return '';
+
+    // Handle object format: { name: '...', email: '...' }
+    if (typeof emailFrom === 'object' && emailFrom.email) {
+      return emailFrom.email;
+    }
+
+    // Handle string format: "John Doe <john@example.com>" or "john@example.com"
+    if (typeof emailFrom === 'string') {
+      const match = emailFrom.match(/<(.+)>/);
+      return match ? match[1] : emailFrom;
+    }
+
+    return '';
   };
 
   const handleKeyDown = (e) => {
@@ -120,11 +153,13 @@ const EmailReader = ({
 
   return (
     <div
-      className="email-reader h-full overflow-y-auto"
+      className="flex flex-col h-full overflow-hidden"
       onKeyDown={handleKeyDown}
       role="region"
       aria-label="Email content"
     >
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
       {/* Email Header */}
       <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 p-6">
         {/* Subject */}
@@ -145,7 +180,7 @@ const EmailReader = ({
                   {extractName(email.from)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {email.from?.match(/<(.+)>/)?.[1] || email.from}
+                  {extractEmail(email.from)}
                 </p>
               </div>
             </div>
@@ -163,9 +198,9 @@ const EmailReader = ({
 
             {showAllRecipients && (
               <div className="mt-2 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
-                <div><strong>To:</strong> {email.to?.join(', ') || 'Unknown'}</div>
-                {email.cc && <div><strong>Cc:</strong> {email.cc.join(', ')}</div>}
-                {email.bcc && <div><strong>Bcc:</strong> {email.bcc.join(', ')}</div>}
+                <div><strong>To:</strong> {email.to?.map(t => typeof t === 'string' ? t : (t?.email || '')).join(', ') || 'Unknown'}</div>
+                {email.cc && email.cc.length > 0 && <div><strong>Cc:</strong> {email.cc.map(c => typeof c === 'string' ? c : (c?.email || '')).join(', ')}</div>}
+                {email.bcc && email.bcc.length > 0 && <div><strong>Bcc:</strong> {email.bcc.map(b => typeof b === 'string' ? b : (b?.email || '')).join(', ')}</div>}
               </div>
             )}
           </div>
@@ -175,14 +210,14 @@ const EmailReader = ({
             <button
               onClick={() => onToggleStar?.(email)}
               className={`p-2 rounded-full transition-colors ${
-                email.starred
+                email.isFlagged
                   ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
                   : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
               }`}
-              aria-label={email.starred ? 'Unstar email' : 'Star email'}
-              aria-pressed={email.starred}
+              aria-label={email.isFlagged ? 'Unstar email' : 'Star email'}
+              aria-pressed={email.isFlagged}
             >
-              <Star className={`w-5 h-5 ${email.starred ? 'fill-current' : ''}`} />
+              <Star className={`w-5 h-5 ${email.isFlagged ? 'fill-current' : ''}`} />
             </button>
             <button
               onClick={() => window.print()}
@@ -206,14 +241,14 @@ const EmailReader = ({
           <div className="flex gap-2 mt-3">
             {email.labels.map(label => (
               <span
-                key={label._id}
+                key={typeof label === 'string' ? label : (label._id || label)}
                 className="px-3 py-1 text-sm font-medium rounded-full"
                 style={{
-                  backgroundColor: label.color ? `${label.color}20` : '#f3f4f6',
-                  color: label.color || '#374151'
+                  backgroundColor: (typeof label === 'string' ? null : label.color) ? `${typeof label === 'string' ? '#1976d2' : label.color}20` : '#f3f4f6',
+                  color: typeof label === 'string' ? '#1976d2' : (label.color || '#374151')
                 }}
               >
-                {label.name}
+                {typeof label === 'string' ? label : label.name}
               </span>
             ))}
           </div>
@@ -223,7 +258,7 @@ const EmailReader = ({
       {/* Email Body */}
       <div
         className="p-6 prose dark:prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: email.body || '' }}
+        dangerouslySetInnerHTML={{ __html: email.htmlBody || email.textBody || '' }}
         role="article"
         aria-label="Email content"
       />
@@ -264,8 +299,11 @@ const EmailReader = ({
         </div>
       )}
 
-      {/* Action Bar */}
-      <div className="sticky bottom-0 z-10 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700
+      {/* Scrollable content ends */}
+      </div>
+
+      {/* Action Bar - Fixed at bottom */}
+      <div className="flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700
                       p-4 flex items-center gap-2">
         <button
           onClick={() => onReply?.(email)}

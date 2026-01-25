@@ -3,7 +3,7 @@
  * Main layout wrapper for the admin dashboard
  */
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';

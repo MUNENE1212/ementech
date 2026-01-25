@@ -12,6 +12,7 @@
 | [Development](./DEVELOPMENT.md) | Local development setup |
 | [API Reference](./API.md) | REST API endpoints |
 | [Infrastructure](./INFRASTRUCTURE.md) | VPS infrastructure blueprint |
+| [Email System](./EMAIL_SYSTEM.md) | Email client documentation |
 
 ---
 
@@ -27,12 +28,12 @@ EmenTech is a fullstack MERN application consisting of:
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 19, TypeScript, Vite, TailwindCSS |
+| Frontend | React 19, TypeScript, Vite, TailwindCSS, Framer Motion |
 | Backend | Node.js, Express.js, Socket.IO |
 | Database | MongoDB Atlas (cloud) |
 | Cache | Redis 7.0 |
 | Web Server | Nginx with Let's Encrypt SSL |
-| Process Manager | PM2 |
+| Process Manager | PM2 with ecosystem config |
 | Email | Postfix (SMTP), Dovecot (IMAP) |
 
 ### Server Details
@@ -63,27 +64,65 @@ Access: http://localhost:5173
 ### Production Deployment
 
 ```bash
-# Build frontend
+# 1. Build frontend
 npm run build
 
-# Deploy to VPS
-scp -r dist/* root@69.164.244.165:/var/www/ementech-website/current/
+# 2. Deploy frontend to VPS
+rsync -av --delete dist/ root@69.164.244.165:/var/www/ementech-website/
 
-# Restart backend
-ssh root@69.164.244.165 "pm2 restart ementech-backend && systemctl reload nginx"
+# 3. Deploy backend (if changed)
+rsync -av backend/ root@69.164.244.165:/var/www/ementech-website/backend/
+
+# 4. Restart backend
+ssh root@69.164.244.165 "cd /var/www/ementech-website/backend && pm2 restart ementech-backend"
 ```
 
 ---
 
 ## Key Features
 
-- Full email client (IMAP/SMTP integration)
-- Lead capture with progressive profiling
-- Lead scoring algorithm (0-120 points)
-- Real-time updates via Socket.IO
-- JWT authentication with RBAC
-- Analytics dashboard
-- AI chatbot integration (OpenAI)
+- **Full Email Client** (IMAP/SMTP integration)
+  - Inbox, Sent, Drafts, Archive, Trash, Starred folders
+  - Compose, Reply, Reply All, Forward
+  - Real-time email updates via Socket.IO
+  - Background syncing (every 30s)
+  - Mobile-responsive design
+
+- **Lead Management**
+  - Lead capture with progressive profiling
+  - Lead scoring algorithm (0-120 points)
+  - Analytics dashboard
+
+- **Authentication**
+  - JWT authentication with RBAC
+  - User roles: Admin, Staff, User
+
+- **AI Integration**
+  - OpenAI chatbot (when API key configured)
+
+---
+
+## Email System Details
+
+### Folder Structure
+- **INBOX**: Incoming emails (synced from IMAP)
+- **SENT**: Emails sent via SMTP (stored in database)
+- **Drafts**: Saved drafts (stored in database)
+- **Archive**: Archived emails (stored in database)
+- **Trash**: Deleted emails (stored in database)
+- **STARRED**: Virtual folder (filter by `isFlagged: true`)
+
+### Email Sync Behavior
+- **Background**: Backend polls IMAP every 30 seconds for new emails
+- **Frontend**: Fetches from database (fast, no IMAP)
+- **Manual**: User can click sync button to force sync
+- **Only INBOX syncs from IMAP** - other folders are database-managed
+
+### Mobile Responsive
+- Sidebar as overlay on mobile
+- Full-width email list
+- Full-screen email reader with back button
+- Touch-friendly interactions
 
 ---
 
@@ -91,4 +130,5 @@ ssh root@69.164.244.165 "pm2 restart ementech-backend && systemctl reload nginx"
 
 - **SSH Access:** `ssh root@69.164.244.165`
 - **PM2 Monitor:** `pm2 monit`
-- **Logs:** `pm2 logs ementech-backend`
+- **Backend Logs:** `pm2 logs ementech-backend --lines 100`
+- **Nginx Logs:** `tail -f /var/log/nginx/error.log`

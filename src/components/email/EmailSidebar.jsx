@@ -13,7 +13,8 @@ import {
   Search,
   Plus,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
 
 /**
@@ -39,7 +40,9 @@ const EmailSidebar = ({
   onLabelFilter,
   onCompose,
   onSettings,
-  onSearch
+  onSearch,
+  onSync,
+  isSyncing = false
 }) => {
   const [isFoldersExpanded, setIsFoldersExpanded] = useState(true);
   const [isLabelsExpanded, setIsLabelsExpanded] = useState(true);
@@ -48,10 +51,10 @@ const EmailSidebar = ({
   const systemFolders = [
     { id: 'INBOX', name: 'Inbox', icon: Inbox, color: 'text-blue-500' },
     { id: 'STARRED', name: 'Starred', icon: Star, color: 'text-yellow-500' },
-    { id: 'SENT', name: 'Sent', icon: Send, color: 'text-green-500' },
-    { id: 'DRAFTS', name: 'Drafts', icon: FileText, color: 'text-neutral-500' },
-    { id: 'ARCHIVE', name: 'Archive', icon: Archive, color: 'text-purple-500' },
-    { id: 'TRASH', name: 'Trash', icon: Trash2, color: 'text-red-500' }
+    { id: 'Sent', name: 'Sent', icon: Send, color: 'text-green-500' },
+    { id: 'Drafts', name: 'Drafts', icon: FileText, color: 'text-neutral-500' },
+    { id: 'Archive', name: 'Archive', icon: Archive, color: 'text-purple-500' },
+    { id: 'Trash', name: 'Trash', icon: Trash2, color: 'text-red-500' }
   ];
 
   const handleSearch = (e) => {
@@ -94,7 +97,7 @@ const EmailSidebar = ({
       onKeyDown={handleKeyDown}
     >
       {/* Compose Button */}
-      <div className="p-4">
+      <div className="p-4 space-y-2">
         <button
           onClick={(e) => {
             console.log('=== COMPOSE BUTTON CLICKED ===');
@@ -113,6 +116,22 @@ const EmailSidebar = ({
         >
           <Plus className="w-5 h-5" />
           <span>Compose</span>
+        </button>
+
+        {/* Sync Button */}
+        <button
+          onClick={() => onSync?.()}
+          disabled={isSyncing}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2
+                     bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700
+                     text-neutral-700 dark:text-neutral-300 rounded-lg font-medium
+                     transition-all cursor-pointer ${
+                       isSyncing ? 'opacity-70 cursor-wait' : ''
+                     }`}
+          aria-label="Sync emails"
+        >
+          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          <span>{isSyncing ? 'Syncing...' : 'Sync Emails'}</span>
         </button>
       </div>
 

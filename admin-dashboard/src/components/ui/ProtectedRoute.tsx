@@ -19,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireRole,
   requirePermission,
 }) => {
-  const { user, isAuthenticated, isLoading, hasRole, hasPermission } = useAuth();
+  const { user: _user, isAuthenticated, isLoading, hasRole, hasPermission } = useAuth();
   const location = useLocation();
 
   if (isLoading) {

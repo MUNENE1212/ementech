@@ -39,12 +39,13 @@ const createImapConnection = (emailAccount) => {
 // ===== FETCH EMAILS =====
 
 /**
- * Fetch emails from IMAP server
+ * Fetch emails from database
  */
 const fetchEmails = async (req, res) => {
   try {
     const { folder = 'INBOX', limit = 50, skip = 0 } = req.query;
     const userId = req.user.id;
+    const folderUpper = folder.toUpperCase();
 
     // Get user's primary email account
     const emailAccount = await UserEmail.getPrimaryEmail(userId);
@@ -55,12 +56,21 @@ const fetchEmails = async (req, res) => {
       });
     }
 
-    // Fetch emails from database first
-    const emails = await Email.find({
+    let query = {
       user: userId,
-      folder: folder,
       isDeleted: false
-    })
+    };
+
+    // For STARRED, fetch flagged emails instead of by folder
+    if (folderUpper === 'STARRED') {
+      query.isFlagged = true;
+    } else {
+      // For regular folders, use case-insensitive folder matching
+      // Database has "Sent" but frontend sends "SENT"
+      query.folder = new RegExp(`^${folder}$`, 'i');
+    }
+
+    const emails = await Email.find(query)
       .sort({ date: -1 })
       .limit(parseInt(limit))
       .skip(parseInt(skip))
@@ -82,7 +92,7 @@ const fetchEmails = async (req, res) => {
 };
 
 /**
- * Sync emails from IMAP server
+ * Sync emails from IMAP server or database
  */
 const syncEmails = async (req, res) => {
   try {
@@ -98,7 +108,42 @@ const syncEmails = async (req, res) => {
       });
     }
 
-    // Update sync status
+    const folderUpper = folder.toUpperCase();
+
+    // For Starred folder, return flagged emails from database
+    if (folderUpper === 'STARRED') {
+      const emails = await Email.find({
+        user: userId,
+        isFlagged: true,
+        isDeleted: false
+      }).sort({ date: -1 });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Starred emails retrieved',
+        syncedCount: emails.length,
+        data: emails
+      });
+    }
+
+    // For folders that don't exist on IMAP (Sent, Drafts, Trash, Archive), return from database
+    // These are managed by our application when sending/saving emails
+    if (!['INBOX'].includes(folderUpper)) {
+      const emails = await Email.find({
+        user: userId,
+        folder: folderUpper,
+        isDeleted: false
+      }).sort({ date: -1 }).limit(100);
+
+      return res.status(200).json({
+        success: true,
+        message: `${folder} emails retrieved from database`,
+        syncedCount: emails.length,
+        data: emails
+      });
+    }
+
+    // Only INBOX syncs from IMAP server
     emailAccount.syncStatus = 'syncing';
     await emailAccount.save();
 
@@ -116,13 +161,15 @@ const syncEmails = async (req, res) => {
           });
         }
 
-        // Fetch recent emails
-        const fetch = imap.fetch(box.messages.total + 1 - Math.min(50, box.messages.total), {
-          bodies: '',
-          markSeen: false
-        });
+        // Fetch recent emails - get last 100 emails
+        const fetch = imap.fetch('1:*', ['body', 'peeks']);
+        let emailCount = 0;
+        const maxEmails = 100;
 
         fetch.on('message', (msg, seqno) => {
+          if (emailCount >= maxEmails) return;
+          emailCount++;
+
           let buffer = '';
 
           msg.on('body', (stream, info) => {
@@ -147,31 +194,31 @@ const syncEmails = async (req, res) => {
                     emailAccount: emailAccount._id,
                     messageId: parsed.messageId,
                     uid: seqno,
-                    folder: folder,
+                    folder: folderUpper,
                     from: {
-                      name: parsed.from?.value[0]?.name || '',
-                      email: parsed.from?.value[0]?.address || ''
+                      name: parsed.from?.value?.[0]?.name || parsed.from?.from?.text || '',
+                      email: parsed.from?.value?.[0]?.address || parsed.from?.from?.text || ''
                     },
-                    to: parsed.to?.value.map(addr => ({
-                      name: addr.name || '',
-                      email: addr.address || ''
+                    to: parsed.to?.value?.map(addr => ({
+                      name: addr?.name || '',
+                      email: addr?.address || ''
                     })) || [],
-                    cc: parsed.cc?.value.map(addr => ({
-                      name: addr.name || '',
-                      email: addr.address || ''
+                    cc: parsed.cc?.value?.map(addr => ({
+                      name: addr?.name || '',
+                      email: addr?.address || ''
                     })) || [],
                     subject: parsed.subject || '(No Subject)',
                     textBody: parsed.text,
                     htmlBody: parsed.html,
-                    date: parsed.date,
-                    sentDate: parsed.date,
+                    date: parsed.date || new Date(),
+                    sentDate: parsed.date || new Date(),
                     hasAttachments: parsed.attachments && parsed.attachments.length > 0,
                     attachments: parsed.attachments?.map(att => ({
-                      filename: att.filename,
-                      contentType: att.contentType,
-                      size: att.size,
-                      contentId: att.contentId,
-                      cid: att.cid
+                      filename: att?.filename,
+                      contentType: att?.contentType,
+                      size: att?.size,
+                      contentId: att?.contentId,
+                      cid: att?.cid
                     })) || [],
                     inReplyTo: parsed.inReplyTo,
                     references: parsed.references || []
@@ -183,10 +230,10 @@ const syncEmails = async (req, res) => {
                   sendNewEmail(userId, email);
 
                   // Update or create contact
-                  if (parsed.from?.value[0]) {
-                    const fromEmail = parsed.from.value[0].address;
-                    const fromName = parsed.from.value[0].name || fromEmail;
+                  const fromEmail = parsed.from?.value?.[0]?.address || parsed.from?.from?.text || '';
+                  const fromName = parsed.from?.value?.[0]?.name || parsed.from?.from?.text || fromEmail;
 
+                  if (fromEmail) {
                     let contact = await Contact.findOne({
                       user: userId,
                       email: fromEmail

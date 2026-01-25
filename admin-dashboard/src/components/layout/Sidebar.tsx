@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -48,8 +48,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const location = useLocation();
-  const { hasRole, hasPermission } = useAuth();
+  const { hasRole, hasPermission, user } = useAuth();
 
   const canAccess = (item: NavItem) => {
     if (item.roles && !hasRole(item.roles)) {
@@ -60,6 +59,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
     }
     return true;
   };
+
+  // Get user info outside of conditional render to avoid React Hooks violations
+  const userInitial = user?.firstName?.[0] || 'U';
+  const userFirstName = user?.firstName || '';
+  const userLastName = user?.lastName || '';
+  const userRole = user?.role || '';
 
   return (
     <aside
@@ -91,7 +96,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
         <ul className="space-y-1 px-2">
           {navItems.filter(canAccess).map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname.startsWith(item.path);
 
             return (
               <li key={item.path}>
@@ -120,13 +124,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
         <div className="p-4 border-t border-dark-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold">
-              {useAuth().user?.firstName?.[0] || 'U'}
+              {userInitial}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {useAuth().user?.firstName} {useAuth().user?.lastName}
+                {userFirstName} {userLastName}
               </p>
-              <p className="text-xs text-gray-400 capitalize">{useAuth().user?.role}</p>
+              <p className="text-xs text-gray-400 capitalize">{userRole}</p>
             </div>
           </div>
         </div>

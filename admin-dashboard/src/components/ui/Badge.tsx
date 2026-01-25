@@ -66,7 +66,7 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', className }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', className: _className }) => {
   const statusMap: Record<string, BadgeVariant> = {
     // Lead statuses
     new: 'info',

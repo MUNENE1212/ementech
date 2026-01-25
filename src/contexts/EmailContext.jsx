@@ -19,6 +19,7 @@ export const EmailProvider = ({ children }) => {
   const [currentFolder, setCurrentFolder] = useState('INBOX');
   const [selectedEmails, setSelectedEmails] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [socket, setSocket] = useState(null);
@@ -132,16 +133,27 @@ export const EmailProvider = ({ children }) => {
     fetchEmails(currentFolder);
     fetchFolders();
     fetchLabels();
-  }, [currentFolder, fetchEmails, fetchFolders, fetchLabels]);
+  }, []); // Empty deps for initial mount only
+
+  // Fetch emails when folder changes (no auto-sync - just fetch from database)
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    fetchEmails(currentFolder);
+  }, [currentFolder]); // Fetch when folder changes
 
   // Email actions
   const syncEmails = async (folder = 'INBOX') => {
+    setSyncing(true);
     try {
       await emailService.syncEmails(folder);
       await fetchEmails(folder);
     } catch (err) {
       console.error('Failed to sync emails:', err);
       throw err;
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -158,8 +170,8 @@ export const EmailProvider = ({ children }) => {
   const markMultipleAsRead = async (emailIds, read = true) => {
     try {
       await emailService.markMultipleAsRead(emailIds, read);
-      setEmails(prev => prev.map(e => 
-        emailIds.includes(e._id) ? { ...e, read } : e
+      setEmails(prev => prev.map(e =>
+        emailIds.includes(e._id) ? { ...e, isRead: read } : e
       ));
     } catch (err) {
       console.error('Failed to mark emails:', err);
@@ -170,8 +182,8 @@ export const EmailProvider = ({ children }) => {
   const toggleStarMultiple = async (emailIds) => {
     try {
       await emailService.toggleStarMultiple(emailIds);
-      setEmails(prev => prev.map(e => 
-        emailIds.includes(e._id) ? { ...e, starred: !e.starred } : e
+      setEmails(prev => prev.map(e =>
+        emailIds.includes(e._id) ? { ...e, isFlagged: !e.isFlagged } : e
       ));
     } catch (err) {
       console.error('Failed to toggle stars:', err);
@@ -228,6 +240,7 @@ export const EmailProvider = ({ children }) => {
     currentFolder,
     selectedEmails,
     loading,
+    syncing,
     error,
     searchQuery,
     newEmailIds,

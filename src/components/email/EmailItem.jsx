@@ -90,7 +90,7 @@ const EmailItem = ({
       ref={itemRef}
       className={`
         relative cursor-pointer transition-all duration-200
-        ${email.read
+        ${email.isRead
           ? 'bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800'
           : 'bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 font-semibold'
         }
@@ -104,7 +104,7 @@ const EmailItem = ({
       aria-selected={isSelected}
       aria-posinset={ariaPosInSet}
       aria-setsize={ariaSetSize}
-      aria-label={`${email.read ? 'Read' : 'Unread'} email from ${senderName}, subject: ${email.subject}, ${formatTime(email.date)}`}
+      aria-label={`${email.isRead ? 'Read' : 'Unread'} email from ${senderName}, subject: ${email.subject}, ${formatTime(email.date)}`}
       tabIndex={isFocused ? 0 : -1}
     >
       {/* Checkbox for multi-select */}
@@ -128,15 +128,15 @@ const EmailItem = ({
       <button
         className={`absolute left-12 top-1/2 -translate-y-1/2 z-10
                        transition-colors duration-200
-                       ${email.starred ? 'text-yellow-500' : 'text-neutral-300 dark:text-neutral-600 hover:text-yellow-400'}`}
+                       ${email.isFlagged ? 'text-yellow-500' : 'text-neutral-300 dark:text-neutral-600 hover:text-yellow-400'}`}
         onClick={(e) => {
           e.stopPropagation();
           // Handle star toggle
         }}
-        aria-label={email.starred ? 'Unstar email' : 'Star email'}
-        aria-pressed={email.starred}
+        aria-label={email.isFlagged ? 'Unstar email' : 'Star email'}
+        aria-pressed={email.isFlagged}
       >
-        <Star className={`w-5 h-5 ${email.starred ? 'fill-current' : ''}`} />
+        <Star className={`w-5 h-5 ${email.isFlagged ? 'fill-current' : ''}`} />
       </button>
 
       {/* New Email Badge */}
@@ -152,7 +152,7 @@ const EmailItem = ({
         {/* Sender and Time Row */}
         <div className="flex items-center justify-between mb-1">
           <span className={`text-sm truncate mr-4 ${
-            email.read
+            email.isRead
               ? 'text-neutral-700 dark:text-neutral-300'
               : 'text-neutral-900 dark:text-white font-bold'
           }`}>
@@ -165,7 +165,7 @@ const EmailItem = ({
 
         {/* Subject */}
         <div className={`text-sm mb-1 truncate ${
-          email.read
+          email.isRead
             ? 'text-neutral-800 dark:text-neutral-200'
             : 'text-neutral-900 dark:text-white font-semibold'
         }`}>
@@ -178,7 +178,7 @@ const EmailItem = ({
             <Paperclip className="w-4 h-4 text-neutral-400 dark:text-neutral-500 flex-shrink-0 mt-0.5" />
           )}
           <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2">
-            {email.preview || 'No preview'}
+            {email.textBody?.substring(0, 100) || email.preview || 'No preview'}
           </p>
         </div>
 
@@ -187,7 +187,7 @@ const EmailItem = ({
           <div className="flex gap-2 mt-2">
             {email.labels.slice(0, 3).map(label => (
               <span
-                key={label._id}
+                key={label._id || label}
                 className="px-2 py-0.5 text-xs font-medium rounded-full bg-neutral-100 dark:bg-neutral-800
                                text-neutral-700 dark:text-neutral-300"
                 style={{
@@ -195,7 +195,7 @@ const EmailItem = ({
                   color: label.color || undefined
                 }}
               >
-                {label.name}
+                {typeof label === 'string' ? label : label.name}
               </span>
             ))}
           </div>
@@ -203,13 +203,13 @@ const EmailItem = ({
       </div>
 
       {/* Unread Indicator */}
-      {!email.read && (
+      {!email.isRead && (
         <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary-500"
              aria-label="Unread email" />
       )}
 
       {/* Folder Badge */}
-      {email.folder !== 'INBOX' && (
+      {email.folder && email.folder !== 'INBOX' && (
         <span className="absolute bottom-2 right-2 px-2 py-1 text-xs font-medium rounded
                          bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
           {email.folder}

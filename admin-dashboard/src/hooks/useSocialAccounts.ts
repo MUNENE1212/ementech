@@ -5,7 +5,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { socialService } from '../services';
-import type { SocialAccount } from '../types';
 
 export const useSocialAccounts = () => {
   const queryClient = useQueryClient();

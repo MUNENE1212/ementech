@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Menu } from 'lucide-react';
+import { X, Menu, ArrowLeft } from 'lucide-react';
 import { useEmail } from '../contexts/EmailContext';
 import EmailList from '../components/email/EmailList';
 import EmailReader from '../components/email/EmailReader';
@@ -14,11 +14,10 @@ import '../styles/email.css';
  * EmailInbox Page
  *
  * Main email interface with:
- * - All 6 email components integrated
- * - WCAG 2.1 AA accessibility
- * - Real-time Socket.IO updates
+ * - Responsive design for mobile and desktop
+ * - Collapsible sidebar on mobile
  * - Full keyboard navigation
- * - Mobile-responsive design
+ * - Email list and reader views
  */
 const EmailInbox = () => {
   const navigate = useNavigate();
@@ -30,6 +29,7 @@ const EmailInbox = () => {
     currentFolder,
     selectedEmails,
     loading,
+    syncing,
     error,
     searchQuery,
     setCurrentFolder,
@@ -47,7 +47,7 @@ const EmailInbox = () => {
 
   // Local state
   const [selectedEmailId, setSelectedEmailId] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [composerData, setComposerData] = useState({
     to: '',
@@ -58,6 +58,7 @@ const EmailInbox = () => {
     attachments: []
   });
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [mobileView, setMobileView] = useState('list'); // 'list' or 'detail'
 
   // Refs
   const skipLinkRef = useRef(null);
@@ -68,7 +69,8 @@ const EmailInbox = () => {
    */
   useEffect(() => {
     if (folderParam) {
-      setCurrentFolder(folderParam.toUpperCase());
+      const folderUpper = folderParam.toUpperCase();
+      setCurrentFolder(folderUpper);
     } else {
       setCurrentFolder('INBOX');
     }
@@ -79,12 +81,12 @@ const EmailInbox = () => {
    */
   useEffect(() => {
     const counts = {
-      'INBOX': emails.filter(e => e.folder === 'INBOX' && !e.read).length,
-      'STARRED': emails.filter(e => e.starred && !e.read).length,
+      'INBOX': emails.filter(e => e.folder === 'INBOX' && !e.isRead).length,
+      'STARRED': emails.filter(e => e.isFlagged && !e.isRead).length,
       'SENT': 0,
-      'DRAFTS': emails.filter(e => e.folder === 'DRAFTS' && !e.read).length,
-      'ARCHIVE': emails.filter(e => e.folder === 'ARCHIVE' && !e.read).length,
-      'TRASH': emails.filter(e => e.folder === 'TRASH' && !e.read).length
+      'DRAFTS': emails.filter(e => e.folder === 'Drafts' && !e.isRead).length,
+      'ARCHIVE': emails.filter(e => e.folder === 'Archive' && !e.isRead).length,
+      'TRASH': emails.filter(e => e.folder === 'Trash' && !e.isRead).length
     };
 
     folders.forEach(folder => {
@@ -119,7 +121,10 @@ const EmailInbox = () => {
               attachments: []
             });
           }
-        } else if (selectedEmailId) {
+        } else if (selectedEmailId && window.innerWidth >= 1024) {
+          setSelectedEmailId(null);
+        } else if (mobileView === 'detail') {
+          setMobileView('list');
           setSelectedEmailId(null);
         }
       }
@@ -127,20 +132,25 @@ const EmailInbox = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showComposer, selectedEmailId]);
-
-  /**
-   * Get selected email objects
-   */
-  const getSelectedEmailObjects = () => {
-    return emails.filter(email => selectedEmails.includes(email._id));
-  };
+  }, [showComposer, selectedEmailId, mobileView]);
 
   /**
    * Handle email click
    */
   const handleEmailClick = (email) => {
     setSelectedEmailId(email._id);
+    // On mobile, switch to detail view
+    if (window.innerWidth < 1024) {
+      setMobileView('detail');
+    }
+  };
+
+  /**
+   * Handle back to list (mobile)
+   */
+  const handleBackToList = () => {
+    setMobileView('list');
+    setSelectedEmailId(null);
   };
 
   /**
@@ -162,12 +172,12 @@ const EmailInbox = () => {
       return;
     }
 
-    // folder is already a string (folder.id or folder._id from sidebar)
     const folderId = folder.toUpperCase();
-
     setCurrentFolder(folderId);
     setSelectedEmailId(null);
     setSelectedEmails([]);
+    setMobileView('list');
+    setIsSidebarOpen(false);
     navigate(`/email/${folderId.toLowerCase()}`);
   };
 
@@ -182,8 +192,19 @@ const EmailInbox = () => {
    * Handle compose
    */
   const handleCompose = () => {
-    console.log('Compose button clicked - setting showComposer to true');
     setShowComposer(true);
+    setIsSidebarOpen(false);
+  };
+
+  /**
+   * Handle sync
+   */
+  const handleSync = async () => {
+    try {
+      await syncEmails(currentFolder);
+    } catch (err) {
+      console.error('Failed to sync emails:', err);
+    }
   };
 
   /**
@@ -222,36 +243,43 @@ const EmailInbox = () => {
    * Handle reply
    */
   const handleReply = (email) => {
+    const fromEmail = typeof email.from === 'object' ? email.from?.email || '' : email.from;
     setComposerData({
-      to: email.from,
+      to: fromEmail,
       subject: `Re: ${email.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${email.from}\nDate: ${email.date}\nSubject: ${email.subject}\n\n${email.body}`,
+      body: `\n\n--- Original Message ---\nFrom: ${typeof email.from === 'object' ? email.from?.name : email.from}\nDate: ${email.date}\nSubject: ${email.subject}\n\n${email.textBody || email.htmlBody || ''}`,
       cc: '',
       bcc: '',
       attachments: []
     });
     setShowComposer(true);
+    setMobileView('list');
   };
 
   /**
    * Handle reply all
    */
   const handleReplyAll = (email) => {
+    const fromEmail = typeof email.from === 'object' ? email.from?.email || '' : email.from;
+    const toEmails = email.to?.map(t => typeof t === 'object' ? t?.email || '' : t).filter(Boolean) || [];
+    const ccEmails = email.cc?.map(c => typeof c === 'object' ? c?.email || '' : c).filter(Boolean) || [];
+
     const allRecipients = [
-      email.from,
-      ...(email.to || []),
-      ...(email.cc || [])
-    ].filter(email => email && typeof email === 'string' && email.trim() !== '');
+      fromEmail,
+      ...toEmails,
+      ...ccEmails
+    ].filter(email => email && email.trim() !== '');
 
     setComposerData({
-      to: allRecipients.join(', '),
+      to: fromEmail,
       subject: `Re: ${email.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${email.from}\nDate: ${email.date}\nSubject: ${email.subject}\n\n${email.body}`,
-      cc: '',
+      body: `\n\n--- Original Message ---\nFrom: ${typeof email.from === 'object' ? email.from?.name : email.from}\nDate: ${email.date}\nSubject: ${email.subject}\n\n${email.textBody || email.htmlBody || ''}`,
+      cc: ccEmails.join(', '),
       bcc: '',
       attachments: []
     });
     setShowComposer(true);
+    setMobileView('list');
   };
 
   /**
@@ -261,12 +289,13 @@ const EmailInbox = () => {
     setComposerData({
       to: '',
       subject: `Fwd: ${email.subject}`,
-      body: `\n\n--- Forwarded Message ---\nFrom: ${email.from}\nDate: ${email.date}\nSubject: ${email.subject}\n\n${email.body}`,
+      body: `\n\n--- Forwarded Message ---\nFrom: ${typeof email.from === 'object' ? email.from?.name : email.from}\nDate: ${email.date}\nSubject: ${email.subject}\n\n${email.textBody || email.htmlBody || ''}`,
       cc: '',
       bcc: '',
       attachments: email.attachments || []
     });
     setShowComposer(true);
+    setMobileView('list');
   };
 
   /**
@@ -281,6 +310,7 @@ const EmailInbox = () => {
       await deleteMultipleEmails([email._id]);
       if (selectedEmailId === email._id) {
         setSelectedEmailId(null);
+        setMobileView('list');
       }
     }
   };
@@ -292,6 +322,7 @@ const EmailInbox = () => {
     await moveToFolder([email._id], 'ARCHIVE');
     if (selectedEmailId === email._id) {
       setSelectedEmailId(null);
+      setMobileView('list');
     }
   };
 
@@ -310,6 +341,7 @@ const EmailInbox = () => {
     setSelectedEmails([]);
     if (selectedEmailId && emailIds.includes(selectedEmailId)) {
       setSelectedEmailId(null);
+      setMobileView('list');
     }
   };
 
@@ -323,6 +355,7 @@ const EmailInbox = () => {
       setSelectedEmails([]);
       if (selectedEmailId && emailIds.includes(selectedEmailId)) {
         setSelectedEmailId(null);
+        setMobileView('list');
       }
     }
   };
@@ -351,6 +384,7 @@ const EmailInbox = () => {
     setSelectedEmails([]);
     if (selectedEmailId && emailIds.includes(selectedEmailId)) {
       setSelectedEmailId(null);
+      setMobileView('list');
     }
   };
 
@@ -365,6 +399,8 @@ const EmailInbox = () => {
    * Get selected email object
    */
   const selectedEmail = emails.find(e => e._id === selectedEmailId);
+
+  const isMobile = window.innerWidth < 1024;
 
   return (
     <>
@@ -382,7 +418,7 @@ const EmailInbox = () => {
       </a>
 
       <motion.div
-        className="email-inbox-container"
+        className="email-inbox-container h-screen flex flex-col bg-white dark:bg-neutral-900"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -390,26 +426,79 @@ const EmailInbox = () => {
         aria-label="Email Inbox"
       >
         {/* Mobile Header */}
-        <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 px-4 py-3 flex items-center justify-between lg:hidden">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-            aria-expanded={isSidebarOpen}
-          >
-            {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-          <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {currentFolder}
-          </h1>
-          <div className="w-10" />
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
+          <div className="flex items-center gap-3">
+            {mobileView === 'detail' ? (
+              <button
+                onClick={handleBackToList}
+                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                aria-label="Back to emails"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                aria-expanded={isSidebarOpen}
+              >
+                {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            )}
+            <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              {mobileView === 'detail' ? 'Email' : currentFolder}
+            </h1>
+          </div>
+          {mobileView === 'list' && (
+            <button
+              onClick={handleCompose}
+              className="px-4 py-2 bg-primary-500 text-white rounded-lg font-medium text-sm"
+              aria-label="Compose new email"
+            >
+              Compose
+            </button>
+          )}
         </header>
 
         {/* Main Layout */}
-        <div className="flex h-[calc(100vh-64px)]">
-          {/* Sidebar */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar - Mobile Overlay, Desktop Fixed */}
+          {isSidebarOpen && (
+            <>
+              <div
+                className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-hidden="true"
+              />
+              <aside
+                className="fixed inset-y-0 left-0 z-50 w-72 lg:hidden"
+                aria-label="Email navigation"
+              >
+                <EmailSidebar
+                  currentFolder={currentFolder}
+                  folders={folders}
+                  labels={labels}
+                  unreadCounts={unreadCounts}
+                  onFolderChange={(f) => {
+                    handleFolderChange(f);
+                  }}
+                  onLabelFilter={(labelId) => {
+                    console.log('Filter by label:', labelId);
+                  }}
+                  onCompose={handleCompose}
+                  onSettings={handleSettings}
+                  onSearch={handleSearch}
+                  onSync={handleSync}
+                  isSyncing={syncing}
+                />
+              </aside>
+            </>
+          )}
+
+          {/* Desktop Sidebar - Always Visible */}
           <aside
-            className={`${isSidebarOpen ? 'block' : 'hidden'} lg:block fixed lg:relative z-30 w-64 h-full`}
+            className="hidden lg:block w-64 bg-neutral-50 dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700"
             aria-label="Email navigation"
           >
             <EmailSidebar
@@ -419,19 +508,20 @@ const EmailInbox = () => {
               unreadCounts={unreadCounts}
               onFolderChange={handleFolderChange}
               onLabelFilter={(labelId) => {
-                // Filter by label
                 console.log('Filter by label:', labelId);
               }}
               onCompose={handleCompose}
               onSettings={handleSettings}
               onSearch={handleSearch}
+              onSync={handleSync}
+              isSyncing={syncing}
             />
           </aside>
 
           {/* Main Content */}
           <main
             ref={mainContentRef}
-            className="flex-1 flex flex-col min-w-0"
+            className="flex-1 flex flex-col min-w-0 overflow-hidden"
             role="main"
             id="main-content"
             tabIndex={-1}
@@ -454,8 +544,8 @@ const EmailInbox = () => {
 
             {/* Content Area */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Email List */}
-              <div className={`${selectedEmailId ? 'hidden lg:block lg:w-1/2' : 'w-full'}`}>
+              {/* Email List - Always visible on desktop, toggles on mobile */}
+              <div className={`${isMobile ? (mobileView === 'list' ? 'flex-1' : 'hidden') : selectedEmailId ? 'w-1/2' : 'flex-1'} overflow-hidden flex flex-col`}>
                 {error && (
                   <div className="m-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400" role="alert">
                     {error}
@@ -473,8 +563,8 @@ const EmailInbox = () => {
                 />
               </div>
 
-              {/* Email Reader */}
-              <div className={`${selectedEmailId ? 'block lg:w-1/2' : 'hidden lg:block'}`}>
+              {/* Email Reader - Visible on desktop when email selected, on mobile when in detail view */}
+              <div className={`${isMobile ? (mobileView === 'detail' ? 'flex-1' : 'hidden') : selectedEmailId ? 'w-1/2' : 'hidden'} overflow-hidden`}>
                 <EmailReader
                   email={selectedEmail}
                   loading={loading}
@@ -508,7 +598,7 @@ const EmailInbox = () => {
               }}
             >
               <motion.div
-                className="w-full max-w-3xl bg-white dark:bg-neutral-900 rounded-lg shadow-xl"
+                className="w-full max-w-3xl bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-h-[90vh] overflow-hidden flex flex-col"
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}

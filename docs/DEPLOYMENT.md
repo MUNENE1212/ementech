@@ -12,17 +12,21 @@ ssh root@69.164.244.165
 
 ```
 /var/www/
-├── ementech-website/
+├── ementech-website/      # Main website deployment (frontend build + backend)
 │   ├── backend/           # Backend API (PM2: ementech-backend)
 │   │   ├── src/server.js  # Entry point
 │   │   ├── ecosystem.config.cjs
 │   │   └── .env
-│   └── current/           # Frontend build (Nginx)
-├── admin-ementech/
-│   └── current/           # Admin frontend
-└── shared/
-    └── scripts/           # Health checks, monitoring
+│   ├── index.html        # React app entry
+│   ├── assets/           # Built JS/CSS
+│   └── ...
+├── admin-ementech/        # Admin dashboard
+│   └── ...
+└── shared/                # Shared scripts
+    └── scripts/
 ```
+
+**Important:** The nginx `root` points to `/var/www/ementech-website/` (not `current/` subdirectory).
 
 ---
 
@@ -34,11 +38,11 @@ ssh root@69.164.244.165
 # 1. Build locally
 npm run build
 
-# 2. Upload to VPS
-scp -r dist/* root@69.164.244.165:/var/www/ementech-website/current/
+# 2. Upload to VPS (correct path)
+rsync -av --delete dist/ root@69.164.244.165:/var/www/ementech-website/
 
-# 3. Reload Nginx
-ssh root@69.164.244.165 "systemctl reload nginx"
+# 3. Verify deployment
+curl -s -o /dev/null -w '%{http_code}' https://ementech.co.ke/
 ```
 
 ### Backend Deployment
@@ -102,9 +106,15 @@ module.exports = {
 
 ## Nginx Configuration
 
-Location: `/etc/nginx/sites-enabled/ementech.co.ke.conf`
+**Main Config:** `/etc/nginx/sites-enabled/default`
 
 ```nginx
+server {
+    listen 80;
+    server_name ementech.co.ke www.ementech.co.ke;
+    return 301 https://$server_name$request_uri;
+}
+
 server {
     listen 443 ssl http2;
     server_name ementech.co.ke www.ementech.co.ke;
@@ -112,27 +122,41 @@ server {
     ssl_certificate /etc/letsencrypt/live/ementech.co.ke/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/ementech.co.ke/privkey.pem;
 
-    root /var/www/ementech-website/current;
+    # IMPORTANT: Root points to deployment directory, NOT current/
+    root /var/www/ementech-website;
     index index.html;
 
+    # API proxy
     location /api/ {
-        proxy_pass http://localhost:5001;
+        proxy_pass http://[::1]:5001;
         proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Socket.IO proxy
+    location /socket.io/ {
+        proxy_pass http://[::1]:5001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    location /socket.io/ {
-        proxy_pass http://localhost:5001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
+    # Frontend SPA
     location / {
         try_files $uri $uri/ /index.html;
     }
 }
+```
+
+**After config changes:**
+```bash
+nginx -t                    # Test configuration
+systemctl reload nginx    # Apply changes
 ```
 
 ---
@@ -223,11 +247,19 @@ pm2 logs ementech-backend --lines 100
 # Check for: MongoDB connection, port conflicts, missing env vars
 ```
 
-### Frontend not loading
+### Frontend not loading / 500 errors
 ```bash
-nginx -t                  # Test config
-systemctl status nginx    # Check status
-ls -la /var/www/ementech-website/current  # Verify files
+# Check nginx config path (should be /var/www/ementech-website, NOT /var/www/ementech-website/current)
+grep "root " /etc/nginx/sites-enabled/default
+
+# Test and reload nginx
+nginx -t && systemctl reload nginx
+
+# Verify files are deployed
+ls -la /var/www/ementech-website/
+
+# Check nginx error logs
+tail -30 /var/log/nginx/error.log
 ```
 
 ### Email issues
