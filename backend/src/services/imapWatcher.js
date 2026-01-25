@@ -78,7 +78,7 @@ class IMAPWatcher {
           console.log(`📊 Starting UID for ${emailAccount.email}: ${lastUid}`);
 
           // Check if IDLE is supported
-          if (box.capabilities.includes('IDLE')) {
+          if (box.capabilities && box.capabilities.includes('IDLE')) {
             idleSupported = true;
             console.log(`✅ IDLE supported for ${emailAccount.email}`);
 

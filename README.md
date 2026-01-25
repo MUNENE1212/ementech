@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# EmenTech Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Fullstack MERN application for ementech.co.ke with integrated email system, lead capture, and analytics.
 
-Currently, two official plugins are available:
+## Quick Links
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| Resource | Link |
+|----------|------|
+| **Production** | https://ementech.co.ke |
+| **Admin** | https://admin.ementech.co.ke |
+| **Documentation** | [docs/](./docs/) |
+| **API Reference** | [docs/API.md](./docs/API.md) |
+| **Architecture** | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 19, TypeScript, Vite, TailwindCSS |
+| Backend | Node.js, Express.js, Socket.IO |
+| Database | MongoDB Atlas, Redis |
+| Server | Nginx, PM2, Let's Encrypt |
 
-## Expanding the ESLint configuration
+## Quick Start
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# Install dependencies
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Start development servers
+npm run dev              # Frontend (localhost:5173)
+cd backend && npm run dev  # Backend (localhost:5001)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+See [Development Guide](./docs/DEVELOPMENT.md) for complete setup instructions.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Deployment
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Build for production
+npm run build
+
+# Deploy to VPS
+scp -r dist/* root@69.164.244.165:/var/www/ementech-website/current/
 ```
+
+See [Deployment Guide](./docs/DEPLOYMENT.md) for full deployment process.
+
+## Documentation
+
+- [README](./docs/README.md) - Project overview
+- [ARCHITECTURE](./docs/ARCHITECTURE.md) - System design and tech stack
+- [DEPLOYMENT](./docs/DEPLOYMENT.md) - Production deployment guide
+- [DEVELOPMENT](./docs/DEVELOPMENT.md) - Local development setup
+- [API](./docs/API.md) - REST API reference
+- [INFRASTRUCTURE](./docs/INFRASTRUCTURE.md) - VPS infrastructure blueprint
+
+## License
+
+© 2026 EmenTech
