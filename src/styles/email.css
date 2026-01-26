@@ -37,20 +37,20 @@
   background: #fff;
   color: #333;
   position: relative;
-  z-index: 10;
+  z-index: 51;
 }
 
 /* Email sidebar */
 .email-sidebar {
   position: relative;
-  z-index: 20;
+  z-index: 55;
 }
 
-/* Compose button - ensure it's above everything */
+/* Compose button - ensure it's above everything including header */
 .email-compose-button,
 button[aria-label="Compose new email"] {
   position: relative !important;
-  z-index: 31 !important;
+  z-index: 60 !important;
 }
 
 /* Header */

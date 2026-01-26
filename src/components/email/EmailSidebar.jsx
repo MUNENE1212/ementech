@@ -92,13 +92,13 @@ const EmailSidebar = ({
     <div
       className="email-sidebar w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700
                   flex flex-col h-full"
-      style={{ position: 'relative', zIndex: 20 }}
+      style={{ position: 'relative', zIndex: 55 }}
       role="navigation"
       aria-label="Email navigation"
       onKeyDown={handleKeyDown}
     >
       {/* Compose Button */}
-      <div className="p-4 space-y-2" style={{ position: 'relative', zIndex: 30 }}>
+      <div className="p-4 space-y-2" style={{ position: 'relative', zIndex: 60 }}>
         <button
           onClick={(e) => {
             console.log('=== COMPOSE BUTTON CLICKED ===');
@@ -111,9 +111,9 @@ const EmailSidebar = ({
           className="w-full flex items-center justify-center gap-2 px-6 py-3
                      bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600
                      text-white rounded-lg font-semibold shadow-md hover:shadow-lg
-                     transition-all cursor-pointer relative z-31"
+                     transition-all cursor-pointer"
           aria-label="Compose new email"
-          style={{ position: 'relative', zIndex: 31 }}
+          style={{ position: 'relative', zIndex: 60 }}
         >
           <Plus className="w-5 h-5" />
           <span>Compose</span>

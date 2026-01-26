@@ -13,10 +13,12 @@ ssh root@69.164.244.165
 ```
 /var/www/
 ├── ementech-website/      # Main website deployment (frontend build + backend)
-│   ├── backend/           # Backend API (PM2: ementech-backend)
-│   │   ├── src/server.js  # Entry point
+│   ├── backend/           # Marketing Ecosystem Backend API (PM2: ementech-backend)
+│   │   ├── src/           # Source code (controllers, models, routes, services)
+│   │   ├── server.js      # Entry point
 │   │   ├── ecosystem.config.cjs
-│   │   └── .env
+│   │   ├── package.json
+│   │   └── .env           # Environment variables
 │   ├── index.html        # React app entry
 │   ├── assets/           # Built JS/CSS
 │   └── ...
@@ -26,7 +28,12 @@ ssh root@69.164.244.165
     └── scripts/
 ```
 
-**Important:** The nginx `root` points to `/var/www/ementech-website/` (not `current/` subdirectory).
+**Important:**
+- The nginx `root` points to `/var/www/ementech-website/` (not `current/` subdirectory)
+- Backend is at `/var/www/ementech-website/backend/` (deployed via `deploy-backend.sh`)
+- Backend runs on port 5001 via PM2
+
+**Note**: This is the MARKETING ECOSYSTEM backend (email campaigns, lead management, analytics). It is DIFFERENT from the DUMUWAKS backend (technician marketplace).
 
 ---
 
@@ -45,23 +52,62 @@ rsync -av --delete dist/ root@69.164.244.165:/var/www/ementech-website/
 curl -s -o /dev/null -w '%{http_code}' https://ementech.co.ke/
 ```
 
-### Backend Deployment
+### Backend Deployment (Marketing Ecosystem)
+
+**IMPORTANT**: The marketing ecosystem backend is separate from the DUMUWAKS backend. Use the dedicated deployment script:
 
 ```bash
-# SSH into server
+# From project root
+cd deployment
+
+# Deploy backend to VPS
+./deploy-backend.sh
+
+# Or dry run first
+./deploy-backend.sh --dry-run
+
+# Skip environment check if .env already configured
+./deploy-backend.sh --skip-env-check
+```
+
+The script will:
+1. Create deployment package
+2. Upload to VPS
+3. Install production dependencies
+4. Start with PM2
+5. Verify deployment
+6. Run health checks
+
+**Manual Backend Deployment** (if script fails):
+
+```bash
+# 1. Prepare backend locally
+cd backend
+tar czf /tmp/backend.tar.gz --exclude=node_modules --exclude=logs .
+
+# 2. Upload to VPS
+scp /tmp/backend.tar.gz root@69.164.244.165:/tmp/
+
+# 3. SSH into server
 ssh root@69.164.244.165
 
-# Navigate to backend
+# 4. Extract and setup
+mkdir -p /var/www/ementech-website/backend
 cd /var/www/ementech-website/backend
+tar xzf /tmp/backend.tar.gz
+npm ci --production
 
-# Pull changes (if using git)
-git pull origin main
+# 5. Configure environment
+cp .env.example .env
+nano .env  # Fill in production values
 
-# Install dependencies
-npm install
+# 6. Start with PM2
+pm2 start ecosystem.config.cjs
+pm2 save
 
-# Restart PM2
-pm2 restart ementech-backend
+# 7. Verify
+pm2 list
+curl http://localhost:5001/api/health
 ```
 
 ### Full Deployment Script
@@ -95,11 +141,24 @@ module.exports = {
   apps: [{
     name: 'ementech-backend',
     script: 'src/server.js',
+    cwd: '/var/www/ementech-website/backend',
     node_args: '--max-old-space-size=256',
     max_memory_restart: '300M',
     env: { NODE_ENV: 'production', PORT: 5001 }
   }]
 };
+```
+
+**Backend Status Check**:
+```bash
+# Check if backend directory exists
+ssh root@69.164.244.165 "ls -la /var/www/ementech-website/backend/"
+
+# Check PM2 process
+ssh root@69.164.244.165 "pm2 list | grep ementech-backend"
+
+# If backend doesn't exist, deploy it:
+cd deployment && ./deploy-backend.sh
 ```
 
 ---
