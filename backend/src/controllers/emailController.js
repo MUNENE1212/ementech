@@ -61,6 +61,15 @@ const fetchEmails = async (req, res) => {
       isDeleted: false
     };
 
+    // Filter out system emails (Fail2Ban, Cron, etc.)
+    // These emails typically have subjects like:
+    // - [Fail2Ban] sshd: banned
+    // - Cron <root@server>
+    // - System notifications
+    query.subject = {
+      $not: /\[Fail2Ban\]|Cron.*@|Cron \<|System notification|Automated alert/i
+    };
+
     // For STARRED, fetch flagged emails instead of by folder
     if (folderUpper === 'STARRED') {
       query.isFlagged = true;
@@ -187,7 +196,10 @@ const syncEmails = async (req, res) => {
                   messageId: parsed.messageId
                 });
 
-                if (!existingEmail) {
+                // Filter out system emails during sync
+                const isSystemEmail = /\[Fail2Ban\]|Cron.*@|Cron \<|System notification|Automated alert/i.test(parsed.subject || '');
+
+                if (!existingEmail && !isSystemEmail) {
                   // Create new email
                   const email = await Email.create({
                     user: userId,

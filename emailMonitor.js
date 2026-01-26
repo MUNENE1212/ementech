@@ -97,6 +97,8 @@ function fetchNewEmails(count) {
       struct: true
     });
 
+    let fetchedCount = 0;
+
     fetch.on('message', (msg, seqno) => {
       let buffer = '';
 
@@ -109,6 +111,15 @@ function fetchNewEmails(count) {
           // Parse email headers
           const email = parseEmail(buffer);
 
+          // Filter out system emails (Fail2Ban, Cron, etc.)
+          const isSystemEmail = /\[Fail2Ban\]|Cron.*@|Cron \<|System notification|Automated alert/i.test(email.subject);
+
+          if (isSystemEmail) {
+            log(`🚫 System email filtered out: ${email.subject}`);
+            return;
+          }
+
+          fetchedCount++;
           log(`📨 New email from: ${email.from}`);
 
           // Emit Socket.IO event to all connected clients
@@ -131,6 +142,10 @@ function fetchNewEmails(count) {
 
     fetch.once('error', (err) => {
       log(`❌ Fetch error: ${err.message}`);
+    });
+
+    fetch.once('end', () => {
+      log(`✅ Fetched ${fetchedCount} new email(s) (${count - fetchedCount} filtered)`);
     });
   });
 }
