@@ -36,6 +36,21 @@
   height: 100vh;
   background: #fff;
   color: #333;
+  position: relative;
+  z-index: 10;
+}
+
+/* Email sidebar */
+.email-sidebar {
+  position: relative;
+  z-index: 20;
+}
+
+/* Compose button - ensure it's above everything */
+.email-compose-button,
+button[aria-label="Compose new email"] {
+  position: relative !important;
+  z-index: 31 !important;
 }
 
 /* Header */

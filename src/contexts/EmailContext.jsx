@@ -125,23 +125,48 @@ export const EmailProvider = ({ children }) => {
     }
   }, []);
 
-  // Initial data fetch
+  // Initial data fetch - runs on mount and when authentication changes
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    console.log('🔍 Authentication detected - fetching email data...');
     fetchEmails(currentFolder);
     fetchFolders();
     fetchLabels();
-  }, []); // Empty deps for initial mount only
+  }, [currentFolder, fetchEmails, fetchFolders, fetchLabels]); // Re-fetch when folder changes
 
-  // Fetch emails when folder changes (no auto-sync - just fetch from database)
+  // Listen for authentication changes (login/logout across tabs)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' || e.key === null) {
+        // Token changed or cleared (logout)
+        const token = localStorage.getItem('token');
+        if (token) {
+          console.log('🔄 Authentication state changed - reloading email data...');
+          fetchEmails(currentFolder);
+          fetchFolders();
+          fetchLabels();
+        } else {
+          // Logged out - clear email data
+          setEmails([]);
+          setFolders([]);
+          setLabels([]);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [currentFolder, fetchEmails, fetchFolders, fetchLabels]);
+
+  // Fetch emails when folder changes
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     fetchEmails(currentFolder);
-  }, [currentFolder]); // Fetch when folder changes
+  }, [currentFolder, fetchEmails]); // Fetch when folder changes
 
   // Email actions
   const syncEmails = async (folder = 'INBOX') => {

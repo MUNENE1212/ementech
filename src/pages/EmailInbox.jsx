@@ -419,6 +419,7 @@ const EmailInbox = () => {
 
       <motion.div
         className="email-inbox-container h-screen flex flex-col bg-white dark:bg-neutral-900"
+        style={{ position: 'relative', zIndex: 10 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
