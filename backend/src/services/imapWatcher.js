@@ -15,6 +15,7 @@ class IMAPWatcher {
   constructor() {
     this.watchers = new Map(); // userId -> Imap connection
     this.syncIntervals = new Map(); // userId -> interval ID
+    this.pollingActive = new Map(); // userId -> boolean (is polling in progress)
   }
 
   /**
@@ -28,18 +29,14 @@ class IMAPWatcher {
       // Get user's primary email account
       const emailAccount = await UserEmail.getPrimaryEmail(userId);
       if (!emailAccount) {
-        console.log(`⚠️ No email account for user ${userId}`);
         return;
       }
-
-      console.log(`📧 Starting IMAP watcher for ${emailAccount.email}`);
 
       // Try IMAP IDLE first (for real-time push)
       const idleSupported = await this.tryIDLE(userId, emailAccount);
 
       // Fall back to polling if IDLE not supported
       if (!idleSupported) {
-        console.log(`⏱️ IDLE not supported, using polling for ${emailAccount.email}`);
         this.startPolling(userId, emailAccount);
       }
     } catch (error) {
@@ -75,18 +72,15 @@ class IMAPWatcher {
 
           // Get highest UID
           lastUid = box.uidnext - 1;
-          console.log(`📊 Starting UID for ${emailAccount.email}: ${lastUid}`);
 
           // Check if IDLE is supported
           if (box.capabilities && box.capabilities.includes('IDLE')) {
             idleSupported = true;
-            console.log(`✅ IDLE supported for ${emailAccount.email}`);
 
             // Watch for new messages
             imap.on('update', (seqno, info) => {
               if (info && info.uid > lastUid) {
-                console.log(`🔔 New email detected for ${emailAccount.email}`);
-                this.fetchNewEmails(userId, emailAccount, imap, lastUid);
+                this.fetchNewEmails(userId, emailAccount, imap, lastUid, box);
                 lastUid = info.uid;
               }
             });
@@ -106,7 +100,6 @@ class IMAPWatcher {
             this.watchers.set(userId, { imap, type: 'IDLE', interval: idleRefresh });
             resolve(true);
           } else {
-            console.log(`⚠️ IDLE not supported by ${emailAccount.imap.host}`);
             imap.end();
             resolve(false);
           }
@@ -138,7 +131,14 @@ class IMAPWatcher {
    */
   startPolling(userId, emailAccount) {
     const interval = setInterval(async () => {
+      // Skip if a poll is already in progress
+      if (this.pollingActive.get(userId)) {
+        return;
+      }
+
       try {
+        this.pollingActive.set(userId, true);
+
         const imap = new Imap({
           host: emailAccount.imap.host,
           port: emailAccount.imap.port,
@@ -151,35 +151,43 @@ class IMAPWatcher {
         imap.once('ready', () => {
           imap.openBox('INBOX', false, async (err, box) => {
             if (err) {
+              console.error('Error opening INBOX during polling:', err.message);
+              this.pollingActive.set(userId, false);
               imap.end();
               return;
             }
 
-            // Get latest UID from database
-            const latestEmail = await Email.findOne({
-              user: userId,
-              folder: 'INBOX'
-            }).sort({ uid: -1 });
+            try {
+              // Get latest UID from database
+              const latestEmail = await Email.findOne({
+                user: userId,
+                folder: 'INBOX'
+              }).sort({ uid: -1 });
 
-            const lastUid = latestEmail?.uid || 0;
-            const currentUid = box.uidnext - 1;
+              const lastUid = latestEmail?.uid || 0;
+              const currentUid = box.uidnext - 1;
 
-            if (currentUid > lastUid) {
-              console.log(`🔔 Polling found ${currentUid - lastUid} new emails for ${emailAccount.email}`);
-              await this.fetchNewEmails(userId, emailAccount, imap, lastUid);
+              if (currentUid > lastUid) {
+                await this.fetchNewEmails(userId, emailAccount, imap, lastUid, box);
+              }
+            } catch (error) {
+              console.error('Error in polling check:', error.message);
+            } finally {
+              this.pollingActive.set(userId, false);
+              imap.end();
             }
-
-            imap.end();
           });
         });
 
         imap.once('error', (err) => {
           console.error(`Polling error for ${emailAccount.email}:`, err.message);
+          this.pollingActive.set(userId, false);
         });
 
         imap.connect();
       } catch (error) {
         console.error(`Polling error:`, error.message);
+        this.pollingActive.set(userId, false);
       }
     }, 30000); // Every 30 seconds
 
@@ -189,100 +197,87 @@ class IMAPWatcher {
   /**
    * Fetch and process new emails
    */
-  async fetchNewEmails(userId, emailAccount, imap, sinceUid) {
-    try {
-      imap.openBox('INBOX', false, (err, box) => {
-        if (err) {
-          console.error('Error opening INBOX:', err.message);
-          return;
-        }
+  async fetchNewEmails(userId, emailAccount, imap, sinceUid, box) {
+    // Fetch emails with UID > sinceUid
+    const fetch = imap.fetch(`${sinceUid + 1}:*`, {
+      bodies: '',
+      markSeen: false
+    });
 
-        // Fetch emails with UID > sinceUid
-        const fetch = imap.fetch(`${sinceUid + 1}:*`, {
-          bodies: '',
-          markSeen: false
+    fetch.on('message', (msg, seqno) => {
+      let buffer = '';
+      let uid = null;
+
+      msg.on('attributes', (attrs) => {
+        uid = attrs.uid;
+      });
+
+      msg.on('body', (stream, info) => {
+        stream.on('data', (chunk) => {
+          buffer += chunk.toString('utf8');
         });
 
-        fetch.on('message', (msg, seqno) => {
-          let buffer = '';
-          let uid = null;
+        stream.once('end', async () => {
+          try {
+            const parsed = await simpleParser(buffer);
+            const messageId = parsed.messageId || `<${parsed.date?.getTime()}@ementech.co.ke>`;
 
-          msg.on('attributes', (attrs) => {
-            uid = attrs.uid;
-          });
-
-          msg.on('body', (stream, info) => {
-            stream.on('data', (chunk) => {
-              buffer += chunk.toString('utf8');
+            // Check if email already exists
+            const existingEmail = await Email.findOne({
+              user: userId,
+              messageId: messageId
             });
 
-            stream.once('end', async () => {
-              try {
-                const parsed = await simpleParser(buffer);
-                const messageId = parsed.messageId || `<${parsed.date?.getTime()}@ementech.co.ke>`;
+            if (existingEmail) {
+              // Email already exists, skip
+            } else {
+              // Create new email
+              const email = await Email.create({
+                user: userId,
+                emailAccount: emailAccount._id,
+                messageId: messageId,
+                uid: uid || seqno,
+                folder: 'INBOX',
+                from: {
+                  name: parsed.from?.value[0]?.name || '',
+                  email: parsed.from?.value[0]?.address || ''
+                },
+                to: parsed.to?.value.map(addr => ({
+                  name: addr.name || '',
+                  email: addr.address || ''
+                })) || [],
+                cc: parsed.cc?.value.map(addr => ({
+                  name: addr.name || '',
+                  email: addr.address || ''
+                })) || [],
+                subject: parsed.subject || '(No Subject)',
+                textBody: parsed.text,
+                htmlBody: parsed.html,
+                date: parsed.date || new Date(),
+                sentDate: parsed.date,
+                hasAttachments: parsed.attachments && parsed.attachments.length > 0,
+                attachments: parsed.attachments?.map(att => ({
+                  filename: att.filename,
+                  contentType: att.contentType,
+                  size: att.size
+                })) || [],
+                inReplyTo: parsed.inReplyTo,
+                references: parsed.references || []
+              });
 
-                // Check if email already exists
-                const existingEmail = await Email.findOne({
-                  user: userId,
-                  messageId: messageId
-                });
-
-                if (!existingEmail) {
-                  // Create new email
-                  const email = await Email.create({
-                    user: userId,
-                    emailAccount: emailAccount._id,
-                    messageId: messageId,
-                    uid: uid || seqno,
-                    folder: 'INBOX',
-                    from: {
-                      name: parsed.from?.value[0]?.name || '',
-                      email: parsed.from?.value[0]?.address || ''
-                    },
-                    to: parsed.to?.value.map(addr => ({
-                      name: addr.name || '',
-                      email: addr.address || ''
-                    })) || [],
-                    cc: parsed.cc?.value.map(addr => ({
-                      name: addr.name || '',
-                      email: addr.address || ''
-                    })) || [],
-                    subject: parsed.subject || '(No Subject)',
-                    textBody: parsed.text,
-                    htmlBody: parsed.html,
-                    date: parsed.date || new Date(),
-                    sentDate: parsed.date,
-                    hasAttachments: parsed.attachments && parsed.attachments.length > 0,
-                    attachments: parsed.attachments?.map(att => ({
-                      filename: att.filename,
-                      contentType: att.contentType,
-                      size: att.size
-                    })) || [],
-                    inReplyTo: parsed.inReplyTo,
-                    references: parsed.references || []
-                  });
-
-                  console.log(`✅ New email synced: ${parsed.subject}`);
-                  console.log(`   From: ${parsed.from?.value[0]?.address}`);
-                  console.log(`   Emitting via Socket.IO to user ${userId}`);
-
-                  // 🔔 Push to client via Socket.IO
-                  sendNewEmail(userId, email);
-                }
-              } catch (error) {
-                console.error('Error parsing email:', error.message);
+              // Push to client via Socket.IO
+              sendNewEmail(userId, email);
+            }
+          } catch (error) {
+                console.error(`Error parsing email UID ${uid}:`, error.message);
               }
             });
           });
         });
 
-        fetch.once('error', (err) => {
-          console.error('Fetch error:', err.message);
-        });
-      });
-    } catch (error) {
-      console.error('Error fetching new emails:', error.message);
-    }
+    fetch.once('error', (err) => {
+      console.error('Fetch error:', err.message);
+    });
   }
 
   /**
@@ -325,15 +320,12 @@ const imapWatcher = new IMAPWatcher();
 const startAllWatchers = async () => {
   try {
     const users = await User.find({ isActive: true });
-    console.log(`📧 Starting IMAP watchers for ${users.length} users...`);
 
     for (const user of users) {
       await imapWatcher.startWatching(user._id);
     }
-
-    console.log('✅ All IMAP watchers started');
   } catch (error) {
-    console.error('❌ Error starting watchers:', error.message);
+    console.error('Error starting watchers:', error.message);
   }
 };
 
