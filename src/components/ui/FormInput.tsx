@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -23,7 +23,8 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
  */
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
   ({ label, error, success, helperText, leftIcon, rightIcon, className = '', id, ...props }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const inputId = id || `input-${generatedId}`;
     const hasError = !!error;
     const hasSuccess = success && !hasError;
 
