@@ -485,7 +485,7 @@ const EmailInbox = () => {
                     handleFolderChange(f);
                   }}
                   onLabelFilter={(labelId) => {
-                    console.log('Filter by label:', labelId);
+                    // Filter by label - functionality to be implemented
                   }}
                   onCompose={handleCompose}
                   onSettings={handleSettings}
@@ -509,7 +509,7 @@ const EmailInbox = () => {
               unreadCounts={unreadCounts}
               onFolderChange={handleFolderChange}
               onLabelFilter={(labelId) => {
-                console.log('Filter by label:', labelId);
+                // Filter by label - functionality to be implemented
               }}
               onCompose={handleCompose}
               onSettings={handleSettings}
@@ -576,7 +576,7 @@ const EmailInbox = () => {
                   onArchive={handleArchive}
                   onToggleStar={handleToggleStar}
                   onDownload={(attachment) => {
-                    console.log('Download attachment:', attachment);
+                    // Download attachment - functionality to be implemented
                   }}
                 />
               </div>

@@ -29,7 +29,7 @@ export const EmailProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('🔒 No auth token found - email features disabled');
+      // No auth token - email features disabled
       return;
     }
 
@@ -50,17 +50,15 @@ export const EmailProvider = ({ children }) => {
       });
 
       newSocket.on('connect', () => {
-        console.log('✅ Connected to email server');
+        // Successfully connected to email server
       });
 
       newSocket.on('connect_error', (error) => {
         // Silently handle connection errors - Socket.IO is optional for email functionality
-        console.warn('⚠️ Real-time updates unavailable (Socket.IO not connected)');
         // Don't set error state - emails will work without real-time updates
       });
 
       newSocket.on('new_email', (email) => {
-        console.log('📧 New email received:', email);
         setEmails(prev => [email, ...prev]);
         setNewEmailIds(prev => new Set([...prev, email._id]));
       });
@@ -130,7 +128,6 @@ export const EmailProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    console.log('🔍 Authentication detected - fetching email data...');
     fetchEmails(currentFolder);
     fetchFolders();
     fetchLabels();
@@ -143,7 +140,6 @@ export const EmailProvider = ({ children }) => {
         // Token changed or cleared (logout)
         const token = localStorage.getItem('token');
         if (token) {
-          console.log('🔄 Authentication state changed - reloading email data...');
           fetchEmails(currentFolder);
           fetchFolders();
           fetchLabels();

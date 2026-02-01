@@ -101,9 +101,6 @@ const EmailSidebar = ({
       <div className="p-4 space-y-2" style={{ position: 'relative', zIndex: 60 }}>
         <button
           onClick={(e) => {
-            console.log('=== COMPOSE BUTTON CLICKED ===');
-            console.log('Event:', e);
-            console.log('onCompose function:', onCompose);
             e.preventDefault();
             e.stopPropagation();
             onCompose?.();

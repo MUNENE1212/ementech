@@ -70,8 +70,12 @@ const EmailComposer = ({
     files.forEach(file => {
       const reader = new FileReader();
 
-      reader.onabort = () => console.log('File reading was aborted');
-      reader.onerror = () => console.log('File reading has failed');
+      reader.onabort = () => {
+        // Handle abort silently - error will be propagated through uploadProgress
+      };
+      reader.onerror = () => {
+        // Handle error silently - error will be propagated through uploadProgress
+      };
       reader.onload = () => {
         // Upload file and track progress
         setUploadProgress(prev => ({

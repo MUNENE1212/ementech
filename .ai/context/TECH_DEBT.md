@@ -1,6 +1,6 @@
 # EmenTech Marketing Ecosystem - Technical Debt Register
 
-**Last Updated:** 2026-01-22
+**Last Updated:** 2026-02-01
 **Maintained By:** refactor_agent
 
 This document tracks all technical debt in the codebase. Technical debt is categorized by priority and tracked until resolution.
@@ -37,7 +37,107 @@ No critical technical debt items. The codebase is production-ready.
 
 ## P1 - Important (Should Fix Soon)
 
-**Current Count:** 2
+**Current Count:** 13
+
+### TD-004: EmailInbox Component Too Large (UI/UX Overhaul)
+
+**ID:** TD-004
+**Priority:** P1
+**Location:** `src/pages/EmailInbox.jsx`
+**Impact:** The EmailInbox component is 633 lines, making it difficult to maintain and test. Complex state management and mixed concerns.
+
+**Proposed Solution:** Split into smaller components:
+- Extract `EmailInboxLayout` for structure
+- Extract `EmailListContainer` for list management
+- Extract `EmailViewContainer` for reading pane
+- Use useReducer for complex state
+
+**Deadline:** Stage 2 completion (2026-02-15)
+**Assigned To:** implementation_agent
+**Status:** TRACKED
+**Created:** 2026-02-01
+
+---
+
+### TD-005: SettingsPage Component Too Large (UI/UX Overhaul)
+
+**ID:** TD-005
+**Priority:** P1
+**Location:** `src/pages/SettingsPage.jsx`
+**Impact:** Component is 525 lines with multiple settings groups. Hard to navigate and maintain.
+
+**Proposed Solution:** Extract setting group components:
+- `ProfileSettings` component
+- `AccountSettings` component
+- `NotificationSettings` component
+- `SecuritySettings` component
+
+**Deadline:** Stage 2 completion (2026-02-15)
+**Assigned To:** implementation_agent
+**Status:** TRACKED
+**Created:** 2026-02-01
+
+---
+
+### TD-006: Missing ARIA Labels (UI/UX Overhaul)
+
+**ID:** TD-006
+**Priority:** P1
+**Location:** Multiple components across the codebase
+**Impact:** Accessibility compliance is incomplete (~60% coverage). WCAG 2.2 AA requires comprehensive ARIA labels.
+
+**Proposed Solution:**
+- Audit all interactive elements (buttons, links, inputs)
+- Add aria-label to icon-only buttons
+- Add aria-required to required form fields
+- Add aria-describedby for error messages
+- Implement role="alert" for notifications
+
+**Deadline:** Stage 2 completion (2026-02-15)
+**Assigned To:** implementation_agent
+**Status:** TRACKED
+**Created:** 2026-02-01
+
+---
+
+### TD-007: Inconsistent Spacing System (UI/UX Overhaul)
+
+**ID:** TD-007
+**Priority:** P1
+**Location:** Multiple components
+**Impact:** Spacing inconsistencies violate 8-point grid design system. Creates visual inconsistencies.
+
+**Proposed Solution:**
+- Enforce Tailwind spacing scale (4, 8, 16, 24, 32, 48, 64px)
+- Replace arbitrary values with standard spacing
+- Document spacing patterns in design system
+
+**Deadline:** Stage 2 completion (2026-02-15)
+**Assigned To:** implementation_agent
+**Status:** TRACKED
+**Created:** 2026-02-01
+
+---
+
+### TD-008: Missing Interactive States (UI/UX Overhaul)
+
+**ID:** TD-008
+**Priority:** P1
+**Location:** Various button and card components
+**Impact:** Missing hover, active, and focus states reduce UX quality and accessibility compliance.
+
+**Proposed Solution:**
+- Add hover states to all interactive elements
+- Add active states for buttons
+- Add focus-visible indicators for keyboard navigation
+- Implement disabled states consistently
+
+**Deadline:** Stage 2 completion (2026-02-15)
+**Assigned To:** implementation_agent
+**Status:** TRACKED
+**Created:** 2026-02-01
+
+---
 
 ### TD-001: Employee Controller File Size
 
@@ -133,9 +233,9 @@ No critical technical debt items. The codebase is production-ready.
 | Priority | Count | Avg Age | Oldest Item | Resolution Rate |
 |----------|-------|----------|--------------|-----------------|
 | P0 | 0 | - | - | N/A |
-| P1 | 2 | 0 days | TD-001 | 0% |
-| P2 | 1 | 0 days | TD-003 | 0% |
-| **Total** | **3** | **0 days** | **TD-001** | **0% (0 resolved)** |
+| P1 | 13 | 0 days | TD-001 | 0% |
+| P2 | 1 | 10 days | TD-003 | 0% |
+| **Total** | **14** | **3 days** | **TD-001** | **0% (0 resolved)** |
 
 ---
 
@@ -162,4 +262,4 @@ To minimize new technical debt:
 ---
 
 **Document Status:** ACTIVE
-**Next Review:** 2026-02-05
+**Next Review:** 2026-02-15
