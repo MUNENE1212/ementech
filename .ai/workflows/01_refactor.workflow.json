@@ -1,0 +1,84 @@
+{
+  "workflow_name": "Refactor & Code Hygiene",
+  "stage": "refactor",
+  "description": "Audit current codebase, establish quality baseline, and fix technical debt before implementing UI/UX improvements",
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Codebase Audit",
+      "agent": "code_refactor_hygienist",
+      "description": "Analyze all React components for inconsistencies, code smells, and technical debt",
+      "tasks": [
+        "Scan all .tsx files in src/",
+        "Identify components with inconsistent styling patterns",
+        "Find components missing accessibility attributes",
+        "Locate components with performance issues (unnecessary re-renders, large bundle sizes)",
+        "Check for proper TypeScript usage (any types, missing types)",
+        "Identify duplicate code patterns that could be standardized"
+      ],
+      "outputs": [
+        "Audit report listing all issues found",
+        "Prioritized list of refactor tasks (P0, P1, P2)",
+        "Files requiring updates"
+      ],
+      "next_step_if_success": 2
+    },
+    {
+      "step": 2,
+      "name": "Establish Quality Baseline",
+      "agent": "code_refactor_hygienist",
+      "description": "Document current state metrics before making changes",
+      "tasks": [
+        "Run TypeScript compiler and count errors",
+        "Run ESLint and count warnings",
+        "Check bundle size (npm run build)",
+        "Run Lighthouse and capture baseline scores",
+        "Count total components and their complexity",
+        "Document current color usage patterns",
+        "Document current spacing patterns"
+      ],
+      "outputs": [
+        "BASELINE_METRICS.md with current state measurements",
+        "Quality scorecard for comparison later"
+      ],
+      "next_step_if_success": 3
+    },
+    {
+      "step": 3,
+      "name": "Fix Critical Issues",
+      "agent": "code_refactor_hygienist",
+      "description": "Fix P0 and P1 issues found in audit",
+      "tasks": [
+        "Fix TypeScript errors",
+        "Fix ESLint warnings",
+        "Add missing accessibility attributes (ARIA labels)",
+        "Remove duplicate code patterns",
+        "Standardize import statements",
+        "Fix any console.log statements in production code"
+      ],
+      "outputs": [
+        "Cleaned codebase with critical issues resolved",
+        "Git commit with refactor fixes"
+      ],
+      "next_step_if_success": "checkpoint"
+    }
+  ],
+
+  "checkpoint": {
+    "create_on_complete": true,
+    "checkpoint_type": "stage_gate",
+    "name": "Refactor Complete",
+    "verification_steps": [
+      "No TypeScript errors",
+      "No ESLint warnings",
+      "All accessibility attributes added",
+      "Code follows consistent patterns"
+    ]
+  },
+
+  "on_failure": {
+    "escalate_if": "Critical issues cannot be fixed without breaking changes",
+    "fallback": "Document blockers and pause for human decision"
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "workflow_name": "Testing & QA Validation",
+  "stage": "validation",
+  "description": "Comprehensive testing to ensure all UI/UX improvements meet quality standards",
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Accessibility Audit",
+      "agent": "qa_enforcer",
+      "description": "Run automated and manual accessibility tests",
+      "tasks": [
+        "Run axe DevTools automated scan",
+        "Run WAVE browser extension scan",
+        "Manual keyboard navigation testing",
+        "Screen reader testing (NVDA/JAWS)",
+        "Color contrast verification with contrast checker",
+        "Touch target size verification (48x48px minimum)",
+        "Form accessibility testing (labels, errors, instructions)"
+      ],
+      "outputs": [
+        "axe DevTools scan report",
+        "WAVE scan report",
+        "Keyboard navigation test results",
+        "Screen reader compatibility report",
+        "Color contrast report",
+        "List of any accessibility issues found"
+      ],
+      "acceptance_criteria": [
+        "Zero critical accessibility issues",
+        "Color contrast 4.5:1 minimum",
+        "All features keyboard accessible",
+        "Screen reader compatible"
+      ],
+      "next_step_if_success": 2
+    },
+    {
+      "step": 2,
+      "name": "Core Web Vitals Verification",
+      "agent": "qa_enforcer",
+      "description": "Run Lighthouse to verify performance metrics",
+      "tasks": [
+        "Run Lighthouse performance audit",
+        "Run Lighthouse accessibility audit",
+        "Run Lighthouse best practices audit",
+        "Run Lighthouse SEO audit",
+        "Measure LCP (Largest Contentful Paint)",
+        "Measure INP (Interaction to Next Paint)",
+        "Measure CLS (Cumulative Layout Shift)",
+        "Check bundle size"
+      ],
+      "outputs": [
+        "Lighthouse report (JSON)",
+        "Core Web Vitals scores",
+        "Bundle size measurement",
+        "Performance comparison vs baseline"
+      ],
+      "acceptance_criteria": [
+        "LCP < 2.5s (Good)",
+        "INP < 200ms (Good)",
+        "CLS < 0.1 (Good)",
+        "Performance score > 90",
+        "Accessibility score = 100",
+        "Best Practices score > 90",
+        "SEO score > 90",
+        "Bundle size < 500KB gzipped"
+      ],
+      "next_step_if_success": 3
+    },
+    {
+      "step": 3,
+      "name": "Responsive Testing",
+      "agent": "qa_enforcer",
+      "description": "Test all breakpoints and devices",
+      "tasks": [
+        "Test mobile view (320px - 767px)",
+        "Test tablet view (768px - 1023px)",
+        "Test desktop view (1024px+)",
+        "Test landscape orientations",
+        "Test touch interactions",
+        "Verify font scaling (200% zoom)",
+        "Check content overflow"
+      ],
+      "outputs": [
+        "Responsive test report",
+        "Screenshots of each breakpoint",
+        "List of responsive issues found"
+      ],
+      "acceptance_criteria": [
+        "All breakpoints render correctly",
+        "No horizontal scrolling on mobile",
+        "Touch targets accessible on all devices",
+        "Content readable at 200% zoom"
+      ],
+      "next_step_if_success": 4
+    },
+    {
+      "step": 4,
+      "name": "Cross-Browser Testing",
+      "agent": "qa_enforcer",
+      "description": "Verify compatibility across major browsers",
+      "tasks": [
+        "Test in Chrome (latest)",
+        "Test in Firefox (latest)",
+        "Test in Safari (latest)",
+        "Test in Edge (latest)",
+        "Check for browser-specific issues",
+        "Verify CSS grid/flexbox support",
+        "Test JavaScript functionality"
+      ],
+      "outputs": [
+        "Cross-browser compatibility report",
+        "List of browser-specific issues"
+      ],
+      "acceptance_criteria": [
+        "All features work in Chrome",
+        "All features work in Firefox",
+        "All features work in Safari",
+        "All features work in Edge",
+        "No console errors in any browser"
+      ],
+      "next_step_if_success": 5
+    },
+    {
+      "step": 5,
+      "name": "User Flow Testing",
+      "agent": "qa_enforcer",
+      "description": "Test critical user journeys end-to-end",
+      "tasks": [
+        "Test homepage to contact form flow",
+        "Test navigation to all pages",
+        "Test form submissions",
+        "Test CTA button clicks",
+        "Test mobile user flows",
+        "Test error scenarios (form errors, 404s)",
+        "Test loading states"
+      ],
+      "outputs": [
+        "User flow test report",
+        "List of UX friction points",
+        "Conversion funnel analysis"
+      ],
+      "acceptance_criteria": [
+        "All critical user flows work smoothly",
+        "Forms submit successfully",
+        "No broken links or 404s",
+        "Loading states display properly",
+        "Error messages are helpful"
+      ],
+      "next_step_if_success": "checkpoint"
+    }
+  ],
+
+  "checkpoint": {
+    "create_on_complete": true,
+    "checkpoint_type": "stage_gate",
+    "name": "QA Validation Complete",
+    "verification_steps": [
+      "WCAG 2.2 AA compliant (passes all automated and manual tests)",
+      "Core Web Vitals green scores (all metrics Good)",
+      "Responsive design verified (all breakpoints)",
+      "Cross-browser compatible",
+      "All user flows tested and working"
+    ]
+  },
+
+  "on_failure": {
+    "escalate_if": "Critical accessibility or performance issues cannot be resolved",
+    "fallback": "Document issues, return to implementation stage for fixes"
+  }
+}

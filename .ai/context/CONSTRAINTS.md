@@ -1,109 +1,178 @@
-# EmenTech Marketing Ecosystem - Project Constraints
+# EmenTech Website UI/UX Overhaul - Project Constraints
 
-This document defines the boundaries and limitations for the project implementation.
+This document defines the boundaries and limitations for the UI/UX overhaul project.
 
 ---
 
 ## Technical Constraints
 
 ### Must Use Existing Stack
-- **Frontend**: React 18 + Vite + TypeScript + Tailwind CSS
-- **Backend**: Express.js + MongoDB + Mongoose
-- **Real-time**: Socket.IO
+- **Frontend**: React 19.2.0 + Vite + TypeScript + Tailwind CSS
+- **Animations**: Framer Motion (optimize existing, don't replace)
+- **Routing**: React Router (maintain existing routes)
 - **Reason**: Consistency with existing codebase, maintainability
 
-### Infrastructure Requirements
-- Redis required for Bull queue and caching
-- PM2 or similar for queue worker management
-- Existing mail server (mail.ementech.co.ke) for company emails
+### No Breaking Changes
+- Existing routes must remain functional
+- API contracts cannot change
+- Database schema changes are out of scope
+- Must maintain backward compatibility
+
+### Performance Requirements
+- Bundle size target: < 500KB gzipped
+- Core Web Vitals thresholds:
+  - LCP (Largest Contentful Paint): < 2.5s
+  - INP (Interaction to Next Paint): < 200ms
+  - CLS (Cumulative Layout Shift): < 0.1
+- No blocking JavaScript on main thread
+- First Contentful Paint: < 1.8s
 
 ### Code Quality
-- All new code must follow existing patterns in codebase
-- TypeScript for frontend, JavaScript for backend (matching existing)
-- ESLint/Prettier compliance
-- Proper error handling on all API endpoints
-
-### Security Non-Negotiables
-- No plaintext password storage
-- OAuth tokens must be encrypted at rest
-- JWT authentication on all protected routes
-- Input validation on all user inputs
-- Rate limiting on bulk operations
+- All code must follow existing patterns
+- TypeScript strict mode enabled
+- ESLint/Prettier compliance required
+- Proper error handling on all user interactions
+- No console.log in production code
 
 ---
 
-## Business Constraints
+## Design Constraints
 
-### Sequential Phase Implementation
-Phases must be implemented in order due to dependencies:
-1. Phase 1 (Employee) - Foundation for assignments
-2. Phase 2 (Leads) - Depends on employee model for assignment
-3. Phase 3 (Marketing) - Core email infrastructure
-4. Phase 4 (Sequences) - Depends on marketing/templates
-5. Phase 5 (A/B Testing) - Depends on marketing infrastructure
-6. Phase 6 (Social) - Can partially parallel
-7. Phase 7 (Analytics) - Depends on data from all phases
-8. Phase 8 (Admin UI) - Built alongside but finalized last
+### Brand Identity
+- **Primary Blue**: #3b82f6 (must remain primary)
+- **Accent Green**: #10b981 (must remain as accent)
+- **Gold/Amber**: #f59e0b (must remain as accent)
+- **Dark Background**: #020617 (can be used but not exclusively)
 
-### Checkpoint Requirements
-- Checkpoint required after each phase completion
-- Human verification required before moving to next phase
-- All tests must pass before checkpoint creation
+**Cannot change brand colors without human approval**
 
-### External Service Dependencies
-- LinkedIn API credentials required for Phase 6
-- Twitter/X API credentials required for Phase 6
-- Mail server admin access required for Phase 1
+### Typography
+- Can evaluate alternative fonts (Plus Jakarta Sans recommended)
+- Must maintain font fallbacks
+- Font loading performance must be optimized
+- Web font files: < 100KB total
+
+### Accessibility Non-Negotiables
+- WCAG 2.2 AA compliance mandatory
+- Color contrast: 4.5:1 for normal text, 3:1 for large text
+- All interactive elements keyboard accessible
+- Touch targets: minimum 48x48px
+- Screen reader compatible (ARIA labels, semantic HTML)
+- No content seizure risk (no flashing > 3x per second)
+
+### Mobile-First Requirement
+- Design for mobile first, enhance for desktop
+- All features must work on mobile (not responsive-adaptive)
+- Touch gestures must be supported where appropriate
+- Mobile performance must meet Core Web Vitals
 
 ---
 
 ## Operational Constraints
 
-### No Breaking Changes
-- Existing API endpoints must remain functional
-- Database migrations must preserve existing data
-- Backwards compatibility required
+### Sequential Stage Implementation
+Stages must be implemented in order:
+1. Refactor & Code Hygiene (establish baseline)
+2. Implementation (apply improvements)
+3. Testing & QA (validate quality)
+4. Security Review (ensure no vulnerabilities)
+5. Deployment (release to production)
+
+### Checkpoint Requirements
+- Checkpoint required after each stage completion
+- All tests must pass before checkpoint creation
+- Core Web Vitals must be verified before deployment
+- Accessibility audit must pass before deployment
 
 ### Testing Requirements
-- Unit tests for new services
-- Integration tests for new API endpoints
-- Manual verification checklist for each phase
+- Manual testing on real devices (mobile + desktop)
+- Automated accessibility testing (axe DevTools, WAVE)
+- Lighthouse auditing (Performance, Accessibility, Best Practices, SEO)
+- Cross-browser testing (Chrome, Firefox, Safari, Edge)
+- Keyboard navigation testing
 
-### Documentation Requirements
-- API documentation for all new endpoints
-- Update README with new features
-- Inline code comments for complex logic
+---
+
+## Scope Constraints
+
+### Out of Scope (Will NOT Do)
+- Backend API changes
+- Database migrations
+- New feature development (only UI/UX improvements)
+- Content creation/copywriting (unless for UX improvement)
+- SEO optimization beyond technical performance
+- A/B testing setup (infrastructure only, UX design included)
+
+### In Scope (Will Do)
+- Design system implementation (colors, typography, spacing)
+- Layout improvements (bento grids, section spacing)
+- Interactive elements (buttons, cards, forms, animations)
+- Accessibility enhancements (ARIA, keyboard nav, contrast)
+- Performance optimization (lazy loading, code splitting, image optimization)
+- Mobile responsiveness improvements
+- Conversion optimization (CTA placement, form optimization)
 
 ---
 
 ## Resource Constraints
 
-### Environment Variables
-New environment variables must be:
-- Documented in `.env.example`
-- Never committed with actual values
-- Validated at application startup
+### Development Time
+- Target: 5 stages completed efficiently
+- Each stage: 1-2 agent runs depending on complexity
+- Total timeline: Dependent on feedback cycles
 
-### Database Indexes
-New indexes must be:
-- Added via migration scripts
-- Documented in model files
-- Verified for query performance
+### External Dependencies
+- No external API calls required
+- No paid tools or services needed
+- Use free dev tools: Lighthouse, axe DevTools, WAVE, React DevTools
 
 ---
 
 ## Escalation Triggers
 
 The following situations MUST be escalated to human:
-1. Any decision affecting the technology stack
-2. External service API key requirements
-3. Schema changes that might affect existing data
-4. Security-related implementation decisions
-5. Cost-incurring service integrations
-6. Timeline-affecting blockers
+1. Brand color changes requested
+2. Technology stack changes proposed
+3. Performance targets cannot be met
+4. Accessibility compliance conflicts with design vision
+5. Breaking changes to existing functionality proposed
+6. Timeline significantly at risk
+
+---
+
+## Success Criteria
+
+### Must Have (Blocking)
+- [ ] WCAG 2.2 AA compliant (passes automated + manual tests)
+- [ ] Core Web Vitals green scores (LCP < 2.5s, INP < 200ms, CLS < 0.1)
+- [ ] All interactive elements have proper hover/focus/active states
+- [ ] Keyboard navigation works for all features
+- [ ] Color contrast meets 4.5:1 minimum
+- [ ] Touch targets meet 48x48px minimum
+- [ ] Mobile responsive (320px - 1920px)
+- [ ] No console errors in production build
+- [ ] Bundle size < 500KB gzipped
+
+### Should Have (Important)
+- [ ] Plus Jakarta Sans or similar modern font for headings
+- [ ] Bento grid layouts for feature showcases
+- [ ] 8-point grid spacing system
+- [ ] 60-30-10 color distribution
+- [ ] Micro-interactions on cards/buttons
+- [ ] Form validation feedback (real-time)
+- [ ] Loading states for async actions
+- [ ] Error states with helpful messages
+
+### Could Have (Nice to Have)
+- [ ] Dark mode toggle
+- [ ] Reduced motion preferences respected
+- [ ] Custom scrollbar styling
+- [ ] Page transition animations
+- [ ] Scroll progress indicators
+- [ ] Back-to-top button
 
 ---
 
 **Document Status**: APPROVED
-**Created**: 2026-01-22
-**Last Updated**: 2026-01-22
+**Created**: 2026-02-01
+**Last Updated**: 2026-02-01

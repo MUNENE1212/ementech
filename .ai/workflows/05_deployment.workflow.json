@@ -1,0 +1,158 @@
+{
+  "workflow_name": "Deployment",
+  "stage": "deployment",
+  "description": "Deploy UI/UX improvements to production and monitor for issues",
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Pre-Deployment Checklist",
+      "agent": "devops_deployment_expert",
+      "description": "Verify all requirements met before deployment",
+      "tasks": [
+        "Verify all tests passing",
+        "Verify no TypeScript errors",
+        "Verify no ESLint warnings",
+        "Verify bundle size acceptable",
+        "Verify accessibility audit passed",
+        "Verify security review passed",
+        "Verify Lighthouse scores meet targets",
+        "Create git tag for release"
+      ],
+      "outputs": [
+        "Pre-deployment checklist completed",
+        "Git tag created (e.g., v1.0.0-uiux-overhaul)"
+      ],
+      "acceptance_criteria": [
+        "All acceptance criteria from previous stages met",
+        "No blocking issues",
+        "Release version tagged"
+      ],
+      "next_step_if_success": 2
+    },
+    {
+      "step": 2,
+      "name": "Build Production Bundle",
+      "agent": "devops_deployment_expert",
+      "description": "Create optimized production build",
+      "tasks": [
+        "Run npm run build",
+        "Verify build output",
+        "Check bundle size",
+        "Verify no build errors or warnings",
+        "Test production build locally",
+        "Generate build artifacts"
+      ],
+      "outputs": [
+        "Production build in dist/",
+        "Build report with bundle sizes",
+        "Local testing results"
+      ],
+      "acceptance_criteria": [
+        "Build completes without errors",
+        "Bundle size < 500KB gzipped",
+        "Local testing passes"
+      ],
+      "next_step_if_success": 3
+    },
+    {
+      "step": 3,
+      "name": "Deploy to Production",
+      "agent": "devops_deployment_expert",
+      "description": "Deploy changes to production environment",
+      "tasks": [
+        "Backup current production version",
+        "Deploy new build",
+        "Verify deployment successful",
+        "Run smoke tests on production",
+        "Monitor for errors",
+        "Verify Core Web Vitals in production"
+      ],
+      "outputs": [
+        "Production deployment completed",
+        "Smoke test results",
+        "Production URL verification"
+      ],
+      "acceptance_criteria": [
+        "Deployment successful",
+        "Smoke tests pass",
+        "No console errors in production",
+        "Site is accessible and functional"
+      ],
+      "next_step_if_success": 4
+    },
+    {
+      "step": 4,
+      "name": "Post-Deployment Monitoring",
+      "agent": "devops_deployment_expert",
+      "description": "Monitor site performance and user feedback",
+      "tasks": [
+        "Monitor for 404 errors",
+        "Monitor console errors",
+        "Check Core Web Vitals (real user monitoring if available)",
+        "Verify accessibility in production",
+        "Check responsive behavior on real devices",
+        "Monitor conversion metrics (if tracking available)",
+        "Document any issues found"
+      ],
+      "outputs": [
+        "Post-deployment monitoring report",
+        "List of any issues discovered",
+        "Recommendations for follow-up improvements"
+      ],
+      "acceptance_criteria": [
+        "No critical errors",
+        "Site performs as expected",
+        "Accessibility works in production",
+        "Mobile devices function correctly"
+      ],
+      "next_step_if_success": 5
+    },
+    {
+      "step": 5,
+      "name": "Documentation & Handoff",
+      "agent": "devops_deployment_expert",
+      "description": "Document changes and create handoff materials",
+      "tasks": [
+        "Create deployment summary document",
+        "Document all changes made",
+        "Update README if needed",
+        "Create design system documentation",
+        "Document accessibility features",
+        "Document known issues or future improvements",
+        "Create rollback plan (if needed)"
+      ],
+      "outputs": [
+        "DEPLOYMENT_SUMMARY.md",
+        "DESIGN_SYSTEM.md (if needed)",
+        "ACCESSIBILITY_GUIDE.md (if needed)",
+        "Rollback procedure document"
+      ],
+      "acceptance_criteria": [
+        "All changes documented",
+        "Design system documented",
+        "Accessibility features documented",
+        "Rollback plan in place"
+      ],
+      "next_step_if_success": "checkpoint"
+    }
+  ],
+
+  "checkpoint": {
+    "create_on_complete": true,
+    "checkpoint_type": "final",
+    "name": "UI/UX Overhaul Complete",
+    "verification_steps": [
+      "Successfully deployed to production",
+      "No critical issues in production",
+      "Core Web Vitals passing",
+      "Accessibility compliant",
+      "Documentation complete"
+    ]
+  },
+
+  "on_failure": {
+    "escalate_if": "Critical deployment issues or rollback required",
+    "fallback": "Execute rollback, document issues, pause for human decision"
+  }
+}

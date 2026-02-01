@@ -1,0 +1,155 @@
+{
+  "workflow_name": "Implementation - UI/UX Improvements",
+  "stage": "implementation",
+  "description": "Implement all 2026 UI/UX best practices across design system, layout, interactions, accessibility, and performance",
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Design System Foundation",
+      "agent": "implementation_agent",
+      "description": "Implement design tokens and base styling improvements",
+      "tasks": [
+        "Apply 60-30-10 color rule to brand colors",
+        "Implement 8-point grid spacing system in Tailwind config",
+        "Add Plus Jakarta Sans font (or evaluate alternatives)",
+        "Create consistent button variants (primary, secondary, ghost)",
+        "Create consistent card variants with hover states",
+        "Create form input variants with validation states"
+      ],
+      "outputs": [
+        "Updated tailwind.config.js with design tokens",
+        "Button.tsx with all variants",
+        "Card.tsx with hover states",
+        "FormInput.tsx with validation feedback"
+      ],
+      "next_step_if_success": 2
+    },
+    {
+      "step": 2,
+      "name": "Layout Improvements",
+      "agent": "implementation_agent",
+      "description": "Enhance page layouts with bento grids and better spacing",
+      "tasks": [
+        "Implement bento grid component for feature showcases",
+        "Update section spacing to 80-120px vertical padding",
+        "Improve responsive breakpoints for mobile/tablet",
+        "Enhance navigation structure and usability",
+        "Add Container component for max-width consistency"
+      ],
+      "outputs": [
+        "BentoGrid.tsx component",
+        "Section.tsx with proper spacing",
+        "Container.tsx for width constraints",
+        "Updated Navbar.tsx for better UX"
+      ],
+      "next_step_if_success": 3
+    },
+    {
+      "step": 3,
+      "name": "Interactive Elements",
+      "agent": "implementation_agent",
+      "description": "Enhance buttons, cards, and forms with micro-interactions",
+      "tasks": [
+        "Add button hover states (150-300ms animations)",
+        "Add card micro-interactions (hover, focus)",
+        "Implement form validation feedback (real-time)",
+        "Ensure 48x48px minimum touch targets",
+        "Add loading states for async actions",
+        "Add error states with helpful messages"
+      ],
+      "outputs": [
+        "Enhanced buttons with proper states",
+        "Enhanced cards with hover effects",
+        "Forms with real-time validation",
+        "Loading and error state components"
+      ],
+      "next_step_if_success": 4
+    },
+    {
+      "step": 4,
+      "name": "Accessibility Enhancements",
+      "agent": "implementation_agent",
+      "description": "Achieve WCAG 2.2 AA compliance across all components",
+      "tasks": [
+        "Fix color contrast ratios to 4.5:1 minimum",
+        "Add ARIA labels to all interactive elements",
+        "Implement keyboard navigation for all features",
+        "Add visible focus indicators",
+        "Use semantic HTML (header, nav, main, section, footer)",
+        "Add skip-to-content link",
+        "Ensure proper heading hierarchy (h1-h6)"
+      ],
+      "outputs": [
+        "All components with ARIA attributes",
+        "Visible focus states on all interactive elements",
+        "Semantic HTML structure",
+        "Skip navigation link"
+      ],
+      "next_step_if_success": 5
+    },
+    {
+      "step": 5,
+      "name": "Performance Optimization",
+      "agent": "implementation_agent",
+      "description": "Optimize Core Web Vitals and reduce bundle size",
+      "tasks": [
+        "Implement lazy loading for images (IntersectionObserver)",
+        "Add code splitting for routes (React.lazy)",
+        "Optimize Framer Motion animations (use transforms, not layout properties)",
+        "Compress images and use WebP format with fallbacks",
+        "Add prefetch for critical resources",
+        "Reduce animation overhead",
+        "Remove unused dependencies"
+      ],
+      "outputs": [
+        "Lazy loaded images",
+        "Code split routes",
+        "Optimized animations",
+        "Compressed image assets",
+        "Reduced bundle size"
+      ],
+      "next_step_if_success": 6
+    },
+    {
+      "step": 6,
+      "name": "Conversion Optimization",
+      "agent": "implementation_agent",
+      "description": "Improve CTAs and forms for better conversion",
+      "tasks": [
+        "Optimize CTA placement and visibility",
+        "Enhance CTA copy (action-oriented, benefit-focused)",
+        "Reduce contact form to 3-5 fields",
+        "Add trust signals (testimonials, certifications)",
+        "Improve mobile user flow",
+        "Add urgency indicators where appropriate"
+      ],
+      "outputs": [
+        "Optimized CTA sections",
+        "Streamlined contact form",
+        "Enhanced testimonials section",
+        "Better mobile user journey"
+      ],
+      "next_step_if_success": "checkpoint"
+    }
+  ],
+
+  "checkpoint": {
+    "create_on_complete": true,
+    "checkpoint_type": "stage_gate",
+    "name": "Implementation Complete",
+    "verification_steps": [
+      "All design system components implemented",
+      "Bento grids and proper spacing in place",
+      "Interactive elements have proper states",
+      "WCAG 2.2 AA compliant (preliminary check)",
+      "Core Web Vitals optimized",
+      "Conversion improvements implemented"
+    ]
+  },
+
+  "on_failure": {
+    "escalate_if": "Cannot meet accessibility or performance targets",
+    "fallback": "Document blockers and request human guidance"
+  }
+}

@@ -1,207 +1,285 @@
-# EmenTech Marketing Ecosystem - Architecture Document
+# EmenTech Website UI/UX Overhaul - Architecture Document
 
 ## Overview
 
-This document defines the approved architectural decisions for the EmenTech Marketing Ecosystem upgrade.
+This document defines the architectural decisions and constraints for the UI/UX overhaul project.
 
 ---
 
-## System Architecture
-
-```
-+-----------------------------------------------------------------------------------+
-|                              FRONTEND LAYER                                        |
-|  +------------------+  +------------------+  +------------------+                  |
-|  | Public Website   |  | Admin Dashboard  |  | Employee Portal  |                  |
-|  | (React/Vite)     |  | (React/Vite)     |  | (React/Vite)     |                  |
-|  | Port: 5173       |  | Port: 5174       |  | (Future)         |                  |
-|  +--------+---------+  +--------+---------+  +--------+---------+                  |
-+-----------+--------------------+--------------------+-----------------------------+
-            |                    |                    |
-            v                    v                    v
-+-----------------------------------------------------------------------------------+
-|                        UNIFIED BACKEND (Express.js)                                |
-|                              Port: 5000                                            |
-|  +-------------+  +-------------+  +-------------+  +-------------+               |
-|  | Marketing   |  | Employee    |  | Analytics   |  | Email       |               |
-|  | Campaigns   |  | Management  |  | Dashboard   |  | System      |               |
-|  | Sequences   |  | Permissions |  | Reports     |  | Templates   |               |
-|  | A/B Testing |  | Auto-Email  |  | Real-time   |  | Bulk Send   |               |
-|  +-------------+  +-------------+  +-------------+  +-------------+               |
-+-----------------------------------------------------------------------------------+
-            |                    |                    |
-            v                    v                    v
-+-----------------------------------------------------------------------------------+
-|                           INFRASTRUCTURE                                           |
-|  +-------------+  +-------------+  +-------------+  +-------------+               |
-|  | MongoDB     |  | Socket.IO   |  | Bull Queue  |  | Redis       |               |
-|  | (Data)      |  | (Real-time) |  | (Email Jobs)|  | (Cache)     |               |
-|  +-------------+  +-------------+  +-------------+  +-------------+               |
-+-----------------------------------------------------------------------------------+
-```
-
----
-
-## Technology Stack
+## Current Technology Stack
 
 ### Frontend
-| Component | Technology | Status |
-|-----------|------------|--------|
-| Public Website | React 18 + Vite + TypeScript | EXISTING |
-| Admin Dashboard | React 18 + Vite + TypeScript | TO BE REBUILT |
-| Styling | Tailwind CSS | EXISTING |
-| State Management | React Context + Hooks | EXISTING |
-| HTTP Client | Axios/Fetch | EXISTING |
-| Real-time | Socket.IO Client | EXISTING |
+| Component | Technology | Version | Status |
+|-----------|-----------|---------|--------|
+| Framework | React | 19.2.0 | EXISTING |
+| Language | TypeScript | Latest | EXISTING |
+| Build Tool | Vite | Latest | EXISTING |
+| Styling | Tailwind CSS | Latest | EXISTING |
+| Animations | Framer Motion | Latest | EXISTING |
+| Routing | React Router | Latest | EXISTING |
+| HTTP | Axios/Fetch | Native | EXISTING |
 
-**Decision**: LOCKED - Admin dashboard will be rebuilt as React/Vite (approved by human)
+### Infrastructure
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Backend API | Express.js | REST endpoints |
+| Database | MongoDB | Content storage |
+| Email | Nodemailer | Contact forms |
 
-### Backend
-| Component | Technology | Status |
-|-----------|------------|--------|
-| Framework | Express.js | EXISTING |
-| Database | MongoDB + Mongoose | EXISTING |
-| Authentication | JWT | EXISTING |
-| Real-time | Socket.IO | EXISTING |
-| Email Sending | Nodemailer | EXISTING |
-| Job Queue | Bull + Redis | TO BE ADDED |
-| Caching | Redis | TO BE ADDED |
-
-### External Integrations
-| Integration | Provider | Status |
-|-------------|----------|--------|
-| Company Email | mail.ementech.co.ke | TO BE INTEGRATED |
-| Social - LinkedIn | LinkedIn API (OAuth 2.0) | TO BE INTEGRATED |
-| Social - Twitter/X | Twitter API v2 (OAuth 2.0) | TO BE INTEGRATED |
-
-**Decision**: LOCKED - Integrate LinkedIn + Twitter/X for social marketing (approved by human)
+**Decision**: LOCKED - Must maintain existing technology stack
 
 ---
 
-## Directory Structure
+## Design System Architecture
 
-### Backend (`/backend/src/`)
-```
-backend/src/
-+-- config/           # Configuration files
-+-- controllers/      # Route handlers
-+-- middleware/       # Express middleware
-+-- models/           # Mongoose models
-+-- routes/           # API route definitions
-+-- services/         # Business logic services
-+-- queues/           # Bull queue definitions (NEW)
-+-- utils/            # Utility functions
-+-- server.js         # Application entry point
+### Color Palette (Current)
+```css
+/* Brand Colors */
+--primary-blue: #3b82f6;
+--accent-green: #10b981;
+--accent-gold: #f59e0b;
+--background-dark: #020617;
+
+/* Applied using 60-30-10 rule:
+   - 60%: White/Light Gray (dominant)
+   - 30%: Brand colors (secondary)
+   - 10%: Vibrant accents (CTA)
+*/
 ```
 
-### Admin Dashboard (`/admin-dashboard/`)
-```
-admin-dashboard/
-+-- src/
-|   +-- components/
-|   |   +-- layout/       # AdminLayout, Sidebar, Header
-|   |   +-- marketing/    # Campaign, Template, Sequence components
-|   |   +-- leads/        # Lead list, pipeline, assignment
-|   |   +-- employees/    # Employee management components
-|   |   +-- analytics/    # Dashboard, reports, visualizations
-|   |   +-- social/       # Social media components
-|   +-- pages/            # Page components
-|   +-- services/         # API service functions
-|   +-- contexts/         # React contexts
-|   +-- hooks/            # Custom hooks
+### Typography Scale
+```css
+/* Headings: Plus Jakarta Sans (to be evaluated) */
+h1: 48-72px, weight 700
+h2: 36-48px, weight 600-700
+h3: 24-32px, weight 600
+
+/* Body: Inter (or evaluate alternatives) */
+body: 16-18px, weight 400
+small: 14-15px, weight 400
+
+/* Code: Geist Mono or Fira Code */
+code: 14-16px, weight 400
 ```
 
----
-
-## Data Models
-
-### Core Models (Existing - To Be Extended)
-- `User.js` - Add employee fields, permissions, invitation system
-- `Lead.js` - Add assignment, pipeline stages, tags
-- `Newsletter.js` - Extend Campaign schema
-- `Analytics.js` - Add campaign, social, pipeline metrics
-
-### New Models (To Be Created)
-- `EmailTemplate.js` - Email template management
-- `EmailSequence.js` - Automated sequence definitions
-- `SequenceEnrollment.js` - Lead enrollment tracking
-- `ABTest.js` - A/B testing configuration and results
-- `SocialConnection.js` - OAuth connections for social platforms
+### Spacing System (8-Point Grid)
+```css
+/* Base unit: 8px */
+4px:  Icon spacing
+8px:  Button padding, small gaps
+16px: Card padding, form inputs
+24px: Section spacing, component gaps
+32px: Large component spacing
+48px: Section breaks
+64px+: Major divisions
+```
 
 ---
 
-## API Design
+## Component Architecture
 
-### Naming Convention
-- RESTful endpoints: `/api/[resource]/[action]`
-- Plural nouns for collections: `/api/employees`, `/api/leads`
-- Nested resources: `/api/employees/:id/performance`
+### Layout Components
+```
+src/components/layout/
+├── Navbar.tsx              # Main navigation (responsive)
+├── Footer.tsx              # Site footer
+├── Section.tsx             # Reusable section wrapper
+├── Container.tsx           # Width-constrained container
+└── Grid.tsx                # Bento grid system
+```
 
-### Authentication
-- JWT tokens in Authorization header
-- Role-based access control (admin, manager, employee)
-- Permission-based actions per resource
+### UI Components
+```
+src/components/ui/
+├── Button.tsx              # Primary/Secondary/Ghost variants
+├── Card.tsx                # Content cards with hover states
+├── FormInput.tsx           # Text, email, textarea inputs
+├── FormLabel.tsx           # Accessible form labels
+├── Badge.tsx               # Status/indicator badges
+├── Modal.tsx               # Dialog/overlay
+└── Accordion.tsx           # Collapsible content
+```
 
-### New Route Groups
-| Route Group | Base Path | Purpose |
-|-------------|-----------|---------|
-| Employees | `/api/employees` | Employee management |
-| Marketing | `/api/marketing` | Campaign management |
-| Templates | `/api/templates` | Email template CRUD |
-| Sequences | `/api/sequences` | Automated sequences |
-| A/B Tests | `/api/abtests` | A/B testing |
-| Social | `/api/social` | Social media integration |
-| Analytics | `/api/analytics` | Enhanced analytics |
-
----
-
-## Security Requirements
-
-1. **Password Storage**: bcrypt with salt rounds >= 10
-2. **Token Encryption**: AES-256 for OAuth tokens
-3. **API Authentication**: JWT with short expiry (1h access, 7d refresh)
-4. **Rate Limiting**: Implement on bulk operations
-5. **Input Validation**: Joi/express-validator on all endpoints
-6. **CORS**: Configured for known frontend origins only
-
----
-
-## Performance Requirements
-
-1. **Bulk Email**: Must use Bull queue (no synchronous sending)
-2. **Real-time Updates**: Socket.IO for live dashboard updates
-3. **Database Indexes**: Required on frequently queried fields
-4. **Caching**: Redis for analytics aggregations
-5. **Pagination**: Required on all list endpoints (default: 20 items)
+### Feature Components
+```
+src/components/features/
+├── Hero.tsx                # Landing hero section
+├── FeatureShowcase.tsx     # Bento grid feature display
+├── TestimonialCard.tsx     # Customer testimonials
+├── CTASection.tsx          # Call-to-action sections
+└── ContactForm.tsx         # Lead capture form
+```
 
 ---
 
-## Environment Variables (New)
+## Page Structure
+
+### Current Pages to Enhance
+1. **HomePage** (`src/pages/HomePage.tsx`)
+   - Hero section
+   - Services/features showcase
+   - Trust signals (clients, testimonials)
+   - CTA sections
+
+2. **AboutPage** (`src/pages/AboutPage.tsx`)
+   - Company story
+   - Team section
+   - Values/mission
+   - CTA
+
+3. **ServicesPage** (`src/pages/ServicesPage.tsx`)
+   - Service listings
+   - Detailed service descriptions
+   - Process breakdown
+
+4. **ContactPage** (`src/pages/ContactPage.tsx`)
+   - Contact form (optimize to 3-5 fields)
+   - Contact information
+   - Map/location
+
+---
+
+## Accessibility Architecture
+
+### Semantic HTML
+```html
+<!-- Use proper landmark elements -->
+<header role="banner">
+<nav role="navigation" aria-label="Main">
+<main role="main">
+<section aria-labelledby="heading-1">
+<aside role="complementary">
+<footer role="contentinfo">
+```
+
+### ARIA Attributes
+```html
+<!-- Interactive elements -->
+<button aria-label="Close dialog" aria-expanded="false">
+<div role="button" tabindex="0" aria-pressed="true">
+
+<!-- Form elements -->
+<label for="email" id="email-label">
+<input id="email" aria-required="true" aria-describedby="email-error">
+
+<!-- Live regions -->
+<div role="status" aria-live="polite">
+<div role="alert" aria-live="assertive">
+```
+
+### Keyboard Navigation
+- Tab: Logical focus order
+- Enter/Space: Activate buttons/links
+- Escape: Close modals/menus
+- Arrow keys: Navigate widgets (tabs, grids)
+
+---
+
+## Performance Architecture
+
+### Code Splitting Strategy
+```typescript
+// Route-based splitting
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+
+// Component-based splitting
+const HeavyComponent = lazy(() => import('./components/HeavyComponent'));
+```
+
+### Image Optimization
+- Use WebP format with fallbacks
+- Implement lazy loading with IntersectionObserver
+- Responsive images with srcset
+- Compress all images (target < 200KB per image)
+
+### Animation Optimization
+```typescript
+// Use CSS transforms instead of layout-triggering properties
+transform: translateX(100px)  // GPU accelerated
+// instead of
+left: 100px  // Triggers layout
+
+// Use will-change sparingly
+will-change: transform, opacity
+
+// Respect prefers-reduced-motion
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; }
+}
+```
+
+---
+
+## Responsive Breakpoints
+
+### Breakpoint Scale
+```css
+/* Mobile First Approach */
+/* Mobile: 0-767px (default) */
+sm: 640px   /* Small tablets */
+md: 768px   /* Tablets */
+lg: 1024px  /* Small desktops */
+xl: 1280px  /* Desktops */
+2xl: 1536px /* Large desktops */
+```
+
+### Container Widths
+```
+Mobile:   100% width
+Tablet:   748px max
+Desktop:  1200px max
+Large:    1400px max
+```
+
+---
+
+## State Management
+
+### Local Component State
+```typescript
+// Use React hooks for component state
+const [isOpen, setIsOpen] = useState(false);
+const [formData, setFormData] = useForm<FormData>();
+```
+
+### Global State (if needed)
+```typescript
+// Use React Context for theme, auth, etc.
+const { theme, toggleTheme } = useTheme();
+```
+
+---
+
+## API Integration
+
+### Existing Endpoints
+```
+GET  /api/content          # Page content
+POST /api/contact          # Contact form submission
+GET  /api/services         # Services data
+POST /api/newsletter       # Newsletter signup
+```
+
+**No new API endpoints required for UI/UX overhaul**
+
+---
+
+## Environment Variables
 
 ```env
-# Redis (for Bull queue and caching)
-REDIS_URL=redis://localhost:6379
-
-# Social Media OAuth
-LINKEDIN_CLIENT_ID=
-LINKEDIN_CLIENT_SECRET=
-LINKEDIN_REDIRECT_URI=
-
-TWITTER_CLIENT_ID=
-TWITTER_CLIENT_SECRET=
-TWITTER_REDIRECT_URI=
-
-# Mail Server Admin API
-MAIL_ADMIN_API_KEY=
-MAIL_ADMIN_API_URL=
+# Existing (no changes required)
+VITE_API_URL=http://localhost:5000/api
+VITE_SITE_URL=http://localhost:5173
 ```
 
 ---
 
 **Document Status**: APPROVED
-**Created**: 2026-01-22
-**Last Updated**: 2026-01-22
+**Created**: 2026-02-01
+**Last Updated**: 2026-02-01
 **Locked Decisions**:
-- Admin Dashboard: React/Vite rebuild (Human Approved)
-- Social Integration: LinkedIn + Twitter/X (Human Approved)
-- Employee Email: Auto-create on mail.ementech.co.ke (Human Approved)
+- Technology Stack: React/Vite/TypeScript/Tailwind (Non-negotiable)
+- Brand Colors: Must maintain current brand identity
+- Performance: Core Web Vitals must pass
+- Accessibility: WCAG 2.2 AA compliance required

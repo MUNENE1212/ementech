@@ -1,0 +1,123 @@
+{
+  "workflow_name": "Security Review",
+  "stage": "security",
+  "description": "Ensure UI/UX improvements do not introduce security vulnerabilities",
+
+  "steps": [
+    {
+      "step": 1,
+      "name": "Dependency Security Scan",
+      "agent": "security_guardian",
+      "description": "Scan for vulnerabilities in npm packages",
+      "tasks": [
+        "Run npm audit",
+        "Check for outdated packages",
+        "Verify package integrity",
+        "Review Framer Motion security",
+        "Review other UI library security"
+      ],
+      "outputs": [
+        "npm audit report",
+        "List of vulnerabilities found",
+        "Recommended package updates"
+      ],
+      "acceptance_criteria": [
+        "Zero high/critical vulnerabilities",
+        "Moderate vulnerabilities documented or patched"
+      ],
+      "next_step_if_success": 2
+    },
+    {
+      "step": 2,
+      "name": "Code Security Review",
+      "agent": "security_guardian",
+      "description": "Review code for security best practices",
+      "tasks": [
+        "Check for hardcoded secrets/credentials",
+        "Verify no console.log in production code",
+        "Check CSP (Content Security Policy) compatibility",
+        "Review form handling for XSS prevention",
+        "Check for unsafe innerHTML usage",
+        "Verify HTTPS usage for external resources",
+        "Check for proper input sanitization"
+      ],
+      "outputs": [
+        "Security code review report",
+        "List of security concerns",
+        "Recommendations for fixes"
+      ],
+      "acceptance_criteria": [
+        "No hardcoded secrets",
+        "No console.log in production",
+        "CSP headers compatible",
+        "XSS prevention in place",
+        "All inputs sanitized"
+      ],
+      "next_step_if_success": 3
+    },
+    {
+      "step": 3,
+      "name": "Accessibility Security",
+      "agent": "security_guardian",
+      "description": "Ensure accessibility features don't introduce security risks",
+      "tasks": [
+        "Review ARIA attributes for injection risks",
+        "Check focus management for security",
+        "Verify screen reader text doesn't leak sensitive info",
+        "Review skip links for security"
+      ],
+      "outputs": [
+        "Accessibility security review",
+        "Any security concerns with a11y features"
+      ],
+      "acceptance_criteria": [
+        "No injection risks in ARIA attributes",
+        "Focus management is secure",
+        "No sensitive data exposed to screen readers"
+      ],
+      "next_step_if_success": 4
+    },
+    {
+      "step": 4,
+      "name": "Performance Security Balance",
+      "agent": "security_guardian",
+      "description": "Ensure performance optimizations don't compromise security",
+      "tasks": [
+        "Review CDN usage for external resources",
+        "Check lazy loading security implications",
+        "Verify code splitting doesn't expose sensitive routes",
+        "Review image optimization security",
+        "Check service worker security (if implemented)"
+      ],
+      "outputs": [
+        "Performance/security balance report",
+        "Any security concerns with optimizations"
+      ],
+      "acceptance_criteria": [
+        "CDN resources use HTTPS",
+        "Lazy loading doesn't expose unauthorized content",
+        "Code splitting is secure",
+        "No sensitive data in optimized bundles"
+      ],
+      "next_step_if_success": "checkpoint"
+    }
+  ],
+
+  "checkpoint": {
+    "create_on_complete": true,
+    "checkpoint_type": "stage_gate",
+    "name": "Security Review Complete",
+    "verification_steps": [
+      "Zero high/critical security vulnerabilities",
+      "No hardcoded secrets or credentials",
+      "CSP and XSS prevention in place",
+      "Accessibility features are secure",
+      "Performance optimizations don't compromise security"
+    ]
+  },
+
+  "on_failure": {
+    "escalate_if": "Critical security vulnerabilities found",
+    "fallback": "Document vulnerabilities, pause for human review"
+  }
+}
