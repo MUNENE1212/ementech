@@ -40,8 +40,9 @@ const Header = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled ? 'bg-dark-950/90 backdrop-blur-lg border-b border-dark-800' : 'bg-transparent'
       }`}
+      role="banner"
     >
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="container mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <motion.div
@@ -83,6 +84,7 @@ const Header = () => {
                       ? 'text-white font-semibold'
                       : 'text-gray-300'
                   }`}
+                  aria-current={location.pathname === item.path ? 'page' : undefined}
                 >
                   {item.name}
                 </Link>
@@ -170,7 +172,10 @@ const Header = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-800 transition-colors"
+            className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-800 transition-colors min-h-[44px]"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </motion.button>
@@ -181,10 +186,13 @@ const Header = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
+            id="mobile-menu"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-dark-950/95 backdrop-blur-lg border-t border-dark-800"
+            role="navigation"
+            aria-label="Mobile navigation"
           >
             <div className="px-4 pt-2 pb-6 space-y-2">
               {navItems.map((item) => (

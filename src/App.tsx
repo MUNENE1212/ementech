@@ -1,27 +1,31 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import ServicesPage from './pages/ServicesPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import TermsPage from './pages/TermsPage';
-import PrivacyPage from './pages/PrivacyPage';
-import CareersPage from './pages/CareersPage';
-import EmailInbox from './pages/EmailInbox';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
-import NotFoundPage from './pages/NotFoundPage';
+import { LoadingIndicator } from './components/ui/LoadingIndicator';
 import { EmailProvider } from './contexts/EmailContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { LeadProvider } from './contexts/LeadContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import ExitIntentPopup from './components/lead-capture/ExitIntentPopup';
 import { AIChatbot } from './components/chat';
+
+// Lazy load pages for code splitting
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ProductsPage = lazy(() => import('./pages/ProductsPage'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const CareersPage = lazy(() => import('./pages/CareersPage'));
+const EmailInbox = lazy(() => import('./pages/EmailInbox'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -41,8 +45,17 @@ function App() {
       <EmailProvider>
         <LeadProvider>
           <div className="min-h-screen bg-dark-950">
+            {/* Skip Navigation Link */}
+            <a
+              href="#main-content"
+              className="skip-link"
+            >
+              Skip to main content
+            </a>
+
             <Header />
-            <main className="flex-grow">
+            <main id="main-content" className="flex-grow" role="main">
+              <Suspense fallback={<LoadingIndicator fullScreen text="Loading page..." />}>
               <AnimatePresence mode="wait">
               <Routes>
                 <Route path="/" element={
@@ -197,6 +210,7 @@ function App() {
                 } />
               </Routes>
             </AnimatePresence>
+            </Suspense>
           </main>
           <Footer />
           <ExitIntentPopup />

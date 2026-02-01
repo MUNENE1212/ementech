@@ -26,7 +26,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-dark-900 border-t border-dark-800">
+    <footer className="bg-dark-900 border-t border-dark-800" role="contentinfo">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Company Info */}
@@ -72,7 +72,8 @@ const Footer = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
-            <h3 className="text-white font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-white font-semibold mb-4" id="footer-quick-links">Quick Links</h3>
+            <nav aria-labelledby="footer-quick-links">
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.name}>
@@ -85,6 +86,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
+            </nav>
           </motion.div>
 
           {/* Contact Info */}
@@ -94,7 +96,8 @@ const Footer = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <h3 className="text-white font-semibold mb-4">Contact Us</h3>
+            <h3 className="text-white font-semibold mb-4" id="footer-contact">Contact Us</h3>
+            <nav aria-labelledby="footer-contact">
             <ul className="space-y-3">
               <li className="flex items-start space-x-3 text-gray-400 text-sm">
                 <Mail size={16} className="flex-shrink-0 mt-1 text-primary-400" />
@@ -113,6 +116,7 @@ const Footer = () => {
                 <span>Nairobi, Kenya</span>
               </li>
             </ul>
+            </nav>
           </motion.div>
 
           {/* Legal */}
@@ -122,7 +126,8 @@ const Footer = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
           >
-            <h3 className="text-white font-semibold mb-4">Legal</h3>
+            <h3 className="text-white font-semibold mb-4" id="footer-legal">Legal</h3>
+            <nav aria-labelledby="footer-legal">
             <ul className="space-y-2">
               {legalLinks.map((link) => (
                 <li key={link.name}>
@@ -135,6 +140,7 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
+            </nav>
           </motion.div>
         </div>
 
